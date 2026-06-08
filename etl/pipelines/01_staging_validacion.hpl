@@ -1,0 +1,1351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>01_staging_validacion</name>
+    <name_sync_with_filename>Y</name_sync_with_filename>
+    <description>Pipeline 1 nativo corregido en Apache Hop. Lee todos los CSV de la carpeta datos, aplica limpieza y validación, genera archivos limpios en etl/staging y un archivo único de errores reales en etl/errores/errores_etl.csv. No utiliza Python ni archivos .command. Corrección: los campos fuente/medio/canal se tratan como texto, no como números.</description>
+    <extended_description/>
+    <pipeline_version/>
+    <pipeline_type>Normal</pipeline_type>
+    <pipeline_status>0</pipeline_status>
+    <parameters>
+    </parameters>
+    <capture_transform_performance>N</capture_transform_performance>
+    <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
+    <transform_performance_capturing_size_limit/>
+    <created_user>ChatGPT</created_user>
+    <created_date>2026/06/07 22:48:51.482</created_date>
+    <modified_user>ChatGPT</modified_user>
+    <modified_date>2026/06/07 22:48:51.482</modified_date>
+  </info>
+  <notepads>
+    <notepad>
+      <backgroundcolorblue>255</backgroundcolorblue>
+      <backgroundcolorgreen>247</backgroundcolorgreen>
+      <backgroundcolorred>239</backgroundcolorred>
+      <bordercolorblue>180</bordercolorblue>
+      <bordercolorgreen>130</bordercolorgreen>
+      <bordercolorred>80</bordercolorred>
+      <fontbold>N</fontbold>
+      <fontcolorblue>30</fontcolorblue>
+      <fontcolorgreen>30</fontcolorgreen>
+      <fontcolorred>30</fontcolorred>
+      <fontitalic>N</fontitalic>
+      <fontname>Noto Sans</fontname>
+      <fontsize>11</fontsize>
+      <height>-1</height>
+      <xloc>60</xloc>
+      <yloc>35</yloc>
+      <note>PIPELINE 1 NATIVO EN HOP: procesa todos los CSV originales, genera etl/staging/*.csv y etl/errores/errores_etl.csv. Ubicar este archivo dentro de ETL/pipelines.</note>
+      <width>900</width>
+    </notepad>
+  </notepads>
+  <order>
+    <hop>
+      <from>Generar fila de control</from>
+      <to>Limpiar y validar CSV</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Limpiar y validar CSV</from>
+      <to>Fin</to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+  <transform>
+    <name>Fin</name>
+    <type>Dummy</type>
+    <description>Fin del pipeline 1.</description>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>680</xloc>
+      <yloc>190</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Generar fila de control</name>
+    <type>RowGenerator</type>
+    <description>Genera una fila para activar el proceso de limpieza.</description>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <length>-1</length>
+        <name>ejecucion</name>
+        <nullif>iniciar</nullif>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <type>String</type>
+      </field>
+    </fields>
+    <interval_in_ms>5000</interval_in_ms>
+    <last_time_field>FiveSecondsAgo</last_time_field>
+    <limit>1</limit>
+    <never_ending>N</never_ending>
+    <row_time_field>now</row_time_field>
+    <attributes/>
+    <GUI>
+      <xloc>110</xloc>
+      <yloc>190</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Limpiar y validar CSV</name>
+    <type>ScriptValueMod</type>
+    <description>Lógica nativa en Hop mediante Modified JavaScript Value. No requiere Python externo.</description>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <optimizationLevel>9</optimizationLevel>
+    <jsScripts>
+      <jsScript>
+        <jsScript_type>0</jsScript_type>
+        <jsScript_name>Limpieza y validación</jsScript_name>
+        <jsScript_script>// Pipeline 1 - Staging y validacion inicial
+
+// Su trabajo es leer los CSV originales, limpiar lo basico, separar registros no validos y dejar cuatro archivos de staging.
+
+var File = Packages.java.io.File;
+var FileInputStream = Packages.java.io.FileInputStream;
+var InputStreamReader = Packages.java.io.InputStreamReader;
+var BufferedReader = Packages.java.io.BufferedReader;
+var OutputStreamWriter = Packages.java.io.OutputStreamWriter;
+var FileOutputStream = Packages.java.io.FileOutputStream;
+var Normalizer = Packages.java.text.Normalizer;
+var SimpleDateFormat = Packages.java.text.SimpleDateFormat;
+var Date = Packages.java.util.Date;
+
+// =====================================================
+// 1. Carpetas del proyecto
+// =====================================================
+
+var carpetaPipeline = getVariable("Internal.Pipeline.Filename.Directory", ".");
+
+function rutaHopAArchivo(valorRuta) {
+  var texto = String(valorRuta);
+  if (texto.indexOf("file:") == 0) {
+    return new File(new Packages.java.net.URI(texto));
+  }
+  return new File(texto);
+}
+
+var carpetaPipelines = rutaHopAArchivo(carpetaPipeline);
+var carpetaEtl = carpetaPipelines.getParentFile();
+var carpetaProyecto = carpetaEtl.getParentFile();
+
+var carpetaDatos = new File(carpetaProyecto, "datos");
+var carpetaStaging = new File(carpetaEtl, "staging");
+var carpetaErrores = new File(carpetaEtl, "errores");
+
+if (!carpetaStaging.exists()) { carpetaStaging.mkdirs(); }
+if (!carpetaErrores.exists()) { carpetaErrores.mkdirs(); }
+
+function borrarCsvDeCarpeta(carpeta) {
+  var archivos = carpeta.listFiles();
+  if (archivos == null) { return; }
+
+  for (var i = 0; i &lt; archivos.length; i++) {
+    var f = archivos[i];
+    if (f.isFile() &amp;&amp; String(f.getName()).toLowerCase().endsWith(".csv")) {
+      f["delete"]();
+    }
+  }
+}
+
+// Pipeline 1 solo limpia sus propias salidas.
+// No toca datos_finales.
+borrarCsvDeCarpeta(carpetaStaging);
+borrarCsvDeCarpeta(carpetaErrores);
+
+// =====================================================
+// 2. Funciones pequenas de apoyo
+// =====================================================
+
+function fechaProcesoActual() {
+  return String(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date()));
+}
+
+function quitarAcentos(texto) {
+  texto = String(texto == null ? "" : texto);
+  var normalizado = Normalizer.normalize(texto, Normalizer.Form.NFD);
+  return String(normalizado).replace(/[\u0300-\u036f]/g, "");
+}
+
+function textoBase(valor) {
+  return quitarAcentos(String(valor == null ? "" : valor).replace(/\u00A0/g, " ").trim()).toLowerCase();
+}
+
+function limpiarTexto(valor) {
+  var texto = String(valor == null ? "" : valor).replace(/^\uFEFF/, "").replace(/\u00A0/g, " ").trim();
+  texto = texto.replace(/\s+/g, " ");
+  texto = quitarAcentos(texto);
+  var base = textoBase(texto);
+
+  if (base == "" || base == "null" || base == "nan" || base == "n/a" || base == "na" || base == "-" || base == "(not set)" || base == "not set") {
+    return "";
+  }
+
+  return texto;
+}
+
+function esVacio(valor) {
+  return limpiarTexto(valor).length == 0;
+}
+
+function nombreColumna(valor, indice) {
+  var s = quitarAcentos(String(valor == null ? "" : valor).replace(/^\uFEFF/, "").trim()).toLowerCase();
+  s = s.replace(/%/g, " porcentaje ");
+  s = s.replace(/#/g, " numero ");
+  s = s.replace(/\//g, " ");
+  s = s.replace(/[^a-z0-9]+/g, "_");
+  s = s.replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+
+  if (s.length == 0) {
+    s = "columna_" + (indice + 1);
+  }
+
+  return s;
+}
+
+function convertirNumero(valor) {
+  var texto = limpiarTexto(valor);
+  if (texto.length == 0) { return ""; }
+
+  texto = texto.replace(/\$/g, "");
+  texto = texto.replace(/USD/gi, "");
+  texto = texto.replace(/,/g, ".");
+  texto = texto.replace(/\s+/g, "");
+
+  var numero = parseFloat(texto);
+  if (isNaN(numero)) { return null; }
+
+  if (Math.floor(numero) == numero) {
+    return String(Math.floor(numero));
+  }
+
+  return String(numero);
+}
+
+function numeroNoNegativo(valor) {
+  var n = convertirNumero(valor);
+  if (n == null || n === "") { return n; }
+  if (parseFloat(n) &lt; 0) { return null; }
+  return n;
+}
+
+function escaparCsv(valor) {
+  var s = String(valor == null ? "" : valor);
+
+  if (s.indexOf('"') >= 0) {
+    s = s.replace(/"/g, '""');
+  }
+
+  if (s.indexOf(",") >= 0 || s.indexOf("\n") >= 0 || s.indexOf("\r") >= 0 || s.indexOf('"') >= 0) {
+    s = '"' + s + '"';
+  }
+
+  return s;
+}
+
+function escribirCsv(archivo, columnas, filas) {
+  var escritor = new OutputStreamWriter(new FileOutputStream(archivo), "UTF-8");
+
+  for (var c = 0; c &lt; columnas.length; c++) {
+    if (c > 0) { escritor.write(","); }
+    escritor.write(escaparCsv(columnas[c]));
+  }
+  escritor.write("\n");
+
+  for (var r = 0; r &lt; filas.length; r++) {
+    for (var i = 0; i &lt; columnas.length; i++) {
+      if (i > 0) { escritor.write(","); }
+      escritor.write(escaparCsv(filas[r][columnas[i]]));
+    }
+    escritor.write("\n");
+  }
+
+  escritor.close();
+}
+
+function leerLineas(archivo) {
+  var lineas = [];
+  var lector = new BufferedReader(new InputStreamReader(new FileInputStream(archivo), "UTF-8"));
+  var linea;
+
+  while ((linea = lector.readLine()) != null) {
+    lineas.push(String(linea));
+  }
+
+  lector.close();
+  return lineas;
+}
+
+function separadorDeLinea(linea) {
+  var texto = String(linea);
+  var puntoComa = (texto.match(/;/g) || []).length;
+  var coma = (texto.match(/,/g) || []).length;
+  return puntoComa > coma ? ";" : ",";
+}
+
+function partirLineaCsv(linea, separador) {
+  linea = String(linea == null ? "" : linea);
+  var salida = [];
+  var actual = "";
+  var entreComillas = false;
+
+  for (var i = 0; i &lt; linea.length; i++) {
+    var ch = linea.charAt(i);
+
+    if (ch == '"') {
+      if (entreComillas &amp;&amp; i + 1 &lt; linea.length &amp;&amp; linea.charAt(i + 1) == '"') {
+        actual += '"';
+        i++;
+      } else {
+        entreComillas = !entreComillas;
+      }
+    } else if (ch == separador &amp;&amp; !entreComillas) {
+      salida.push(actual);
+      actual = "";
+    } else {
+      actual += ch;
+    }
+  }
+
+  salida.push(actual);
+  return salida;
+}
+
+function contiene(texto, pedazo) {
+  return texto.indexOf(pedazo) >= 0;
+}
+
+function esEncabezado(fila) {
+  var partes = [];
+  for (var i = 0; i &lt; fila.length; i++) {
+    var v = limpiarTexto(fila[i]);
+    if (v.length > 0) { partes.push(v); }
+  }
+
+  if (partes.length &lt; 2) { return false; }
+
+  var unido = textoBase(partes.join(" "));
+  if (unido.indexOf("column1") == 0) { return false; }
+
+  var palabras = [
+    "usuario", "usuarios", "sesion", "sesiones", "pagina", "ruta", "vistas",
+    "evento", "eventos", "fuente", "medio", "canal", "pais", "ciudad",
+    "audiencia", "clic", "impresion", "producto", "categoria", "precio"
+  ];
+
+  for (var p = 0; p &lt; palabras.length; p++) {
+    if (unido.indexOf(palabras[p]) >= 0) { return true; }
+  }
+
+  return false;
+}
+
+function periodoDelArchivo(lineas) {
+  var inicio = "";
+  var fin = "";
+
+  for (var i = 0; i &lt; Math.min(lineas.length, 50); i++) {
+    var linea = String(lineas[i]);
+
+    var m1 = /Fecha de inicio:\s*(\d{8})/i.exec(linea);
+    if (m1) { inicio = m1[1]; }
+
+    var m2 = /Fecha de finalizaci[oo]n:\s*(\d{8})/i.exec(linea);
+    if (m2) { fin = m2[1]; }
+
+    var m3 = /(\d{8})\s*[-_]\s*(\d{8})/.exec(linea);
+    if (m3 &amp;&amp; inicio == "" &amp;&amp; fin == "") {
+      inicio = m3[1];
+      fin = m3[2];
+    }
+
+    var m4 = /Fecha de extracci[oo]n:\s*(\d{8})/i.exec(linea);
+    if (m4 &amp;&amp; inicio == "" &amp;&amp; fin == "") {
+      inicio = m4[1];
+      fin = m4[1];
+    }
+  }
+
+  return {inicio: inicio, fin: fin};
+}
+
+function convertirFechaOchoDigitos(valor) {
+  var s = limpiarTexto(valor);
+  if (/^\d{8}$/.test(s)) {
+    return s.substring(0, 4) + "-" + s.substring(4, 6) + "-" + s.substring(6, 8);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return s;
+  }
+  return "";
+}
+
+function fechaReferencia(periodo) {
+  var f = convertirFechaOchoDigitos(periodo.fin);
+  if (f.length > 0) { return f; }
+
+  f = convertirFechaOchoDigitos(periodo.inicio);
+  if (f.length > 0) { return f; }
+
+  return "";
+}
+
+function obtenerValor(fila, nombres) {
+  for (var i = 0; i &lt; nombres.length; i++) {
+    var k = nombres[i];
+    if (fila[k] != null &amp;&amp; limpiarTexto(fila[k]).length > 0) {
+      return limpiarTexto(fila[k]);
+    }
+  }
+  return "";
+}
+
+function leerTablas(archivo) {
+  var lineas = leerLineas(archivo);
+  var periodo = periodoDelArchivo(lineas);
+  var tablas = [];
+  var i = 0;
+
+  while (i &lt; lineas.length) {
+    var linea = String(lineas[i]).replace(/\r$/, "");
+
+    if (linea.trim().length == 0 || linea.trim().indexOf("#") == 0) {
+      i++;
+      continue;
+    }
+
+    var sep = separadorDeLinea(linea);
+    var fila = partirLineaCsv(linea, sep);
+
+    if (esEncabezado(fila)) {
+      var encabezadoOriginal = fila;
+      var encabezado = [];
+      var usados = {};
+
+      for (var h = 0; h &lt; encabezadoOriginal.length; h++) {
+        var col = nombreColumna(encabezadoOriginal[h], h);
+        if (usados[col] != null) {
+          usados[col] = usados[col] + 1;
+          col = col + "_" + usados[col];
+        } else {
+          usados[col] = 1;
+        }
+        encabezado.push(col);
+      }
+
+      var filas = [];
+      var lineaEncabezado = i + 1;
+      i++;
+
+      while (i &lt; lineas.length) {
+        var cruda = String(lineas[i]).replace(/\r$/, "");
+
+        if (cruda.trim().length == 0) {
+          i++;
+          break;
+        }
+
+        if (cruda.trim().indexOf("#") == 0) {
+          break;
+        }
+
+        var valores = partirLineaCsv(cruda, sep);
+        while (valores.length &lt; encabezado.length) {
+          valores.push("");
+        }
+
+        var obj = {};
+        for (var c = 0; c &lt; encabezado.length; c++) {
+          obj[encabezado[c]] = valores[c] == null ? "" : valores[c];
+        }
+
+        filas.push({
+          numeroLinea: i + 1,
+          cruda: cruda,
+          valores: obj
+        });
+
+        i++;
+      }
+
+      if (filas.length > 0) {
+        tablas.push({
+          lineaEncabezado: lineaEncabezado,
+          encabezado: encabezado,
+          encabezadoOriginal: encabezadoOriginal,
+          filas: filas,
+          periodo: periodo
+        });
+      }
+    } else {
+      i++;
+    }
+  }
+
+  return tablas;
+}
+
+function agregarError(lista, archivo, linea, area, campo, valor, motivo) {
+  lista.push({
+    archivo_origen: archivo,
+    numero_fila_origen: String(linea == null ? "" : linea),
+    area_datos: area,
+    campo: campo,
+    valor: String(valor == null ? "" : valor),
+    motivo_rechazo: motivo,
+    fecha_proceso: fechaProceso
+  });
+}
+
+function nombreArchivoNormal(archivo) {
+  return textoBase(String(archivo.getName()));
+}
+
+function esArchivoCatalogo(archivo) {
+  var n = nombreArchivoNormal(archivo);
+  return n.indexOf("catalogo_productos") >= 0;
+}
+
+function dividirFuenteMedio(valor) {
+  var s = limpiarTexto(valor);
+  var partes = s.split("/");
+  if (partes.length >= 2) {
+    return {
+      fuente: limpiarTexto(partes[0]),
+      medio: limpiarTexto(partes[1])
+    };
+  }
+  return {fuente: s, medio: ""};
+}
+
+function limpiarFuente(valor) {
+  var s = textoBase(valor);
+
+  if (s == "(direct)" || s == "direct" || s == "directo") { return "(direct)"; }
+  if (s.indexOf("google") >= 0) { return "google"; }
+  if (s.indexOf("facebook") >= 0) { return "facebook.com"; }
+  if (s.indexOf("bing") >= 0) { return "bing"; }
+  if (s.indexOf("whatsapp") >= 0 || s == "wa.me") { return "whatsapp"; }
+  if (s.indexOf("cercaclick") >= 0) { return "cercaclickcr.com"; }
+  if (s.length == 0) { return "No identificado"; }
+
+  return limpiarTexto(valor);
+}
+
+function limpiarMedio(valor) {
+  var s = textoBase(valor);
+
+  if (s == "(none)" || s == "none" || s == "direct" || s == "directo") { return "none"; }
+  if (s == "organic" || s == "organico") { return "organic"; }
+  if (s == "referral" || s == "referido") { return "referral"; }
+  if (s == "social" || s == "organic social" || s == "social organic") { return "social"; }
+  if (s.length == 0) { return ""; }
+
+  return limpiarTexto(valor);
+}
+
+function limpiarCanal(valor) {
+  var s = textoBase(valor);
+
+  if (s == "direct" || s == "directo" || s == "(direct)") { return "Directo"; }
+  if (s == "organic search" || s == "organic" || s == "busqueda organica" || s == "organico") { return "Busqueda organica"; }
+  if (s == "referral" || s == "referido") { return "Referido"; }
+  if (s == "organic social" || s == "social" || s == "social organico") { return "Social organico"; }
+  if (s.length == 0) { return ""; }
+
+  return limpiarTexto(valor);
+}
+
+function normalizarDispositivo(valor) {
+  var s = textoBase(valor);
+
+  if (s == "mobile" || s == "movil" || s == "movil") { return "Movil"; }
+  if (s == "desktop" || s == "escritorio") { return "Escritorio"; }
+  if (s == "tablet" || s == "tableta") { return "Tableta"; }
+  if (s == "no identificado" || s.length == 0) { return "No identificado"; }
+
+  return "";
+}
+
+function nombrePaginaDesdeRuta(valor) {
+  var ruta = limpiarTexto(valor);
+  var base = textoBase(ruta);
+
+  if (base == "/" || base == "home" || base == "/home") { return "Inicio"; }
+  if (base == "/shop" || base == "shop") { return "Tienda"; }
+  if (base == "/search" || base == "search") { return "Busqueda"; }
+  if (base == "/cart" || base == "cart") { return "Carrito"; }
+  if (base == "/checkout" || base == "checkout") { return "Checkout"; }
+  if (base == "/contact" || base == "contact") { return "Contacto"; }
+
+  if (base.indexOf("/shop/p/") >= 0 || base.indexOf("shop_p_") >= 0) {
+    var partes = ruta.split("/");
+    var ultimo = partes[partes.length - 1];
+    if (limpiarTexto(ultimo).length > 0) {
+      return ultimo.replace(/-/g, " ");
+    }
+    return "Producto";
+  }
+
+  if (ruta.length == 0) { return "No identificado"; }
+  return ruta;
+}
+
+function slugDeRuta(valor) {
+  var ruta = textoBase(valor);
+  ruta = ruta.replace(/https/g, "");
+  ruta = ruta.replace(/www/g, "");
+  ruta = ruta.replace(/cercaclickcrcom/g, "");
+  ruta = ruta.replace(/[^a-z0-9]+/g, "-");
+  ruta = ruta.replace(/^-+|-+$/g, "");
+  return ruta;
+}
+
+function normalizarNombreProducto(valor) {
+  var s = textoBase(valor);
+  s = s.replace(/[^a-z0-9]+/g, "-");
+  s = s.replace(/^-+|-+$/g, "");
+  return s;
+}
+
+// =====================================================
+// 3. Preparacion de archivos y acumuladores
+// =====================================================
+
+var fechaProceso = fechaProcesoActual();
+var errores = [];
+
+var stgTrafico = [];
+var stgPaginas = [];
+var stgSegmentacion = [];
+var stgCatalogo = [];
+
+var resumen = {};
+
+function sumarResumen(salida, generados, rechazados, observacion) {
+  if (resumen[salida] == null) {
+    resumen[salida] = {
+      archivo_salida: salida,
+      registros_generados: 0,
+      registros_rechazados: 0,
+      observaciones: observacion
+    };
+  }
+
+  resumen[salida].registros_generados += generados;
+  resumen[salida].registros_rechazados += rechazados;
+}
+
+var archivos = [];
+var lista = carpetaDatos.listFiles();
+
+if (lista != null) {
+  for (var i = 0; i &lt; lista.length; i++) {
+    var f = lista[i];
+    if (f.isFile() &amp;&amp; String(f.getName()).toLowerCase().endsWith(".csv") &amp;&amp; !String(f.getName()).startsWith("._")) {
+      archivos.push(f);
+    }
+  }
+}
+
+if (archivos.length == 0) {
+  throw "No se encontraron archivos CSV en: " + carpetaDatos.getAbsolutePath();
+}
+
+// Mapa minimo para relacionar paginas de producto con catalogo.
+// Esto no crea dimension; solo deja preparada una llave de origen.
+var productoPorUrl = {};
+var productoPorNombreNormalizado = {};
+
+// =====================================================
+// 4. Catalogo de productos
+// =====================================================
+
+function procesarCatalogo(archivo) {
+  var tablas = leerTablas(archivo);
+  var nombreArchivo = String(archivo.getName());
+  var rechazados = 0;
+  var generados = 0;
+
+  for (var t = 0; t &lt; tablas.length; t++) {
+    var tabla = tablas[t];
+
+    for (var r = 0; r &lt; tabla.filas.length; r++) {
+      var item = tabla.filas[r];
+      var fila = item.valores;
+
+      var fecha = limpiarTexto(obtenerValor(fila, ["fecha_extraccion"]));
+      var idProducto = limpiarTexto(obtenerValor(fila, ["producto_id_origen"]));
+      var nombreProducto = limpiarTexto(obtenerValor(fila, ["nombre_producto"]));
+      var categoria = limpiarTexto(obtenerValor(fila, ["categoria"]));
+      var precio = numeroNoNegativo(obtenerValor(fila, ["precio_usd"]));
+      var estado = limpiarTexto(obtenerValor(fila, ["estado_producto"]));
+      var tipoCatalogo = limpiarTexto(obtenerValor(fila, ["tipo_catalogo"]));
+      var urlProducto = limpiarTexto(obtenerValor(fila, ["url_producto"]));
+      var fuenteDato = limpiarTexto(obtenerValor(fila, ["fuente_dato"]));
+
+      if (fecha.length == 0) {
+        fecha = fechaReferencia(tabla.periodo);
+      }
+
+      if (idProducto.length == 0) {
+        agregarError(errores, nombreArchivo, item.numeroLinea, "catalogo", "producto_id_origen", idProducto, "Producto sin identificador de origen.");
+        rechazados++;
+        continue;
+      }
+
+      if (nombreProducto.length == 0) {
+        agregarError(errores, nombreArchivo, item.numeroLinea, "catalogo", "nombre_producto", nombreProducto, "Producto sin nombre.");
+        rechazados++;
+        continue;
+      }
+
+      if (categoria.length == 0) {
+        agregarError(errores, nombreArchivo, item.numeroLinea, "catalogo", "categoria", categoria, "Producto sin categoria.");
+        rechazados++;
+        continue;
+      }
+
+      if (precio == null || precio === "") {
+        agregarError(errores, nombreArchivo, item.numeroLinea, "catalogo", "precio_usd", obtenerValor(fila, ["precio_usd"]), "Precio vacio, negativo o no numerico.");
+        rechazados++;
+        continue;
+      }
+
+      var nombreNormal = normalizarNombreProducto(nombreProducto);
+
+      stgCatalogo.push({
+        archivo_origen: nombreArchivo,
+        numero_fila_origen: String(item.numeroLinea),
+        fecha_extraccion: fecha,
+        producto_id_origen: idProducto,
+        nombre_producto: nombreProducto,
+        nombre_producto_normalizado: nombreNormal,
+        categoria: categoria,
+        precio_usd: precio,
+        estado_producto: estado.length > 0 ? estado : "Publicado",
+        tipo_catalogo: tipoCatalogo.length > 0 ? tipoCatalogo : "Catalogo principal",
+        url_producto: urlProducto,
+        fuente_dato: fuenteDato.length > 0 ? fuenteDato : "Sitio web CercaClick CR",
+        estado_registro: "Valido"
+      });
+
+      if (urlProducto.length > 0) {
+        productoPorUrl[slugDeRuta(urlProducto)] = {
+          id: idProducto,
+          nombre: nombreProducto
+        };
+      }
+
+      productoPorNombreNormalizado[nombreNormal] = {
+        id: idProducto,
+        nombre: nombreProducto
+      };
+
+      generados++;
+    }
+  }
+
+  sumarResumen("stg_catalogo_productos.csv", generados, rechazados, "Catalogo limpio para separar producto, categoria y oferta en el Pipeline 2.");
+}
+
+// Primero se procesa catalogo para poder usar producto_id en paginas.
+for (var a = 0; a &lt; archivos.length; a++) {
+  if (esArchivoCatalogo(archivos[a])) {
+    procesarCatalogo(archivos[a]);
+  }
+}
+
+// =====================================================
+// 5. Trafico y fuentes
+// =====================================================
+
+function procesarTablaTrafico(archivo, tabla) {
+  var nombreArchivo = String(archivo.getName());
+  var generados = 0;
+  var rechazados = 0;
+  var fechaRef = fechaReferencia(tabla.periodo);
+
+  for (var r = 0; r &lt; tabla.filas.length; r++) {
+    var item = tabla.filas[r];
+    var fila = item.valores;
+
+    var fuenteMedio = obtenerValor(fila, [
+      "fuente_medio_de_la_sesion",
+      "primera_fuente_medio_del_usuario"
+    ]);
+
+    var fuenteManual = obtenerValor(fila, [
+      "fuente_manual_de_la_sesion"
+    ]);
+
+    var canal = obtenerValor(fila, [
+      "primer_grupo_de_canales_principal_del_usuario_grupo_de_canales_predeterminado",
+      "grupo_de_canales_predeterminado",
+      "canal",
+      "canal_de_acceso"
+    ]);
+
+    var fuente = "";
+    var medio = "";
+
+    if (fuenteMedio.length > 0) {
+      var div = dividirFuenteMedio(fuenteMedio);
+      fuente = div.fuente;
+      medio = div.medio;
+    }
+
+    if (fuente.length == 0 &amp;&amp; fuenteManual.length > 0) {
+      fuente = fuenteManual;
+    }
+
+    fuente = limpiarFuente(fuente);
+    medio = limpiarMedio(medio);
+    canal = limpiarCanal(canal);
+
+    var sesiones = numeroNoNegativo(obtenerValor(fila, ["sesiones"]));
+    var usuariosActivos = numeroNoNegativo(obtenerValor(fila, ["usuarios_activos"]));
+    var usuariosNuevos = numeroNoNegativo(obtenerValor(fila, ["usuarios_nuevos"]));
+
+    if (fuente == "No identificado" &amp;&amp; canal.length == 0) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "trafico", "fuente/canal", item.cruda, "No se pudo identificar fuente ni canal de acceso.");
+      rechazados++;
+      continue;
+    }
+
+    if (sesiones == null || usuariosActivos == null || usuariosNuevos == null) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "trafico", "metricas", item.cruda, "Alguna metrica de trafico es negativa o no numerica.");
+      rechazados++;
+      continue;
+    }
+
+    if (usuariosActivos !== "" &amp;&amp; usuariosNuevos !== "" &amp;&amp; parseFloat(usuariosNuevos) > parseFloat(usuariosActivos)) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "trafico", "usuarios_nuevos", usuariosNuevos, "Usuarios nuevos mayor que usuarios activos.");
+      rechazados++;
+      continue;
+    }
+
+    stgTrafico.push({
+      archivo_origen: nombreArchivo,
+      numero_fila_origen: String(item.numeroLinea),
+      fecha_inicio_periodo: convertirFechaOchoDigitos(tabla.periodo.inicio),
+      fecha_fin_periodo: convertirFechaOchoDigitos(tabla.periodo.fin),
+      fecha_referencia: fechaRef,
+      fuente_acceso_original: fuente,
+      medio_original: medio,
+      canal_acceso_original: canal,
+      sesiones: sesiones,
+      usuarios_activos: usuariosActivos,
+      usuarios_nuevos: usuariosNuevos,
+      tipo_registro: fuenteMedio.length > 0 ? "fuente_medio" : (fuenteManual.length > 0 ? "fuente" : "canal"),
+      estado_registro: "Valido"
+    });
+
+    generados++;
+  }
+
+  sumarResumen("stg_trafico_fuentes.csv", generados, rechazados, "Trafico por fuente, medio o canal; la homologacion final queda para el Pipeline 2.");
+}
+
+function tablaEsTrafico(tabla) {
+  var h = textoBase(tabla.encabezado.join(" "));
+  return h.indexOf("fuente_medio") >= 0 ||
+         h.indexOf("fuente_manual") >= 0 ||
+         h.indexOf("grupo_de_canales") >= 0;
+}
+
+// =====================================================
+// 6. Interaccion de paginas
+// =====================================================
+
+function relacionarProductoConPagina(pagina, titulo) {
+  var slug = slugDeRuta(pagina);
+  if (productoPorUrl[slug] != null) {
+    return productoPorUrl[slug];
+  }
+
+  var nombreNormal = normalizarNombreProducto(titulo);
+  if (productoPorNombreNormalizado[nombreNormal] != null) {
+    return productoPorNombreNormalizado[nombreNormal];
+  }
+
+  if (slug.indexOf("shop-p") >= 0 || textoBase(pagina).indexOf("/shop/p/") >= 0) {
+    return {id: "No identificado", nombre: nombrePaginaDesdeRuta(pagina)};
+  }
+
+  return {id: "No aplica", nombre: "No aplica"};
+}
+
+function procesarTablaPaginas(archivo, tabla) {
+  var nombreArchivo = String(archivo.getName());
+  var generados = 0;
+  var rechazados = 0;
+  var fechaRef = fechaReferencia(tabla.periodo);
+
+  for (var r = 0; r &lt; tabla.filas.length; r++) {
+    var item = tabla.filas[r];
+    var fila = item.valores;
+
+    var pagina = obtenerValor(fila, [
+      "ruta_de_pagina_y_clase_de_pantalla",
+      "pagina_de_destino_y_cadena_de_consulta",
+      "pagina_de_destino",
+      "titulo_de_pagina_y_clase_de_pantalla"
+    ]);
+
+    var titulo = obtenerValor(fila, [
+      "titulo_de_pagina_y_clase_de_pantalla",
+      "pagina_de_destino_y_cadena_de_consulta",
+      "ruta_de_pagina_y_clase_de_pantalla",
+      "pagina_de_destino"
+    ]);
+
+    if (pagina.length == 0 &amp;&amp; titulo.length == 0) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "interaccion_paginas", "pagina", item.cruda, "La pagina o titulo esta vacio.");
+      rechazados++;
+      continue;
+    }
+
+    var vistas = numeroNoNegativo(obtenerValor(fila, ["vistas"]));
+    var usuariosActivos = numeroNoNegativo(obtenerValor(fila, ["usuarios_activos"]));
+    var sesiones = numeroNoNegativo(obtenerValor(fila, ["sesiones", "sesiones_con_interaccion"]));
+    var usuariosNuevos = numeroNoNegativo(obtenerValor(fila, ["usuarios_nuevos"]));
+    var eventos = numeroNoNegativo(obtenerValor(fila, ["numero_de_eventos", "eventos"]));
+    var eventosClave = numeroNoNegativo(obtenerValor(fila, ["eventos_clave"]));
+    var tiempo = numeroNoNegativo(obtenerValor(fila, [
+      "tiempo_de_interaccion_medio_por_usuario_activo",
+      "tiempo_de_interaccion_medio_por_sesion",
+      "tiempo_medio_segundos"
+    ]));
+    var impresiones = numeroNoNegativo(obtenerValor(fila, ["impresiones_de_la_busqueda_de_google_organica", "impresiones_organicas"]));
+    var clics = numeroNoNegativo(obtenerValor(fila, ["clics_de_la_busqueda_de_google_organica", "clics_organicos"]));
+
+    if (vistas == null || usuariosActivos == null || sesiones == null || usuariosNuevos == null || eventos == null || eventosClave == null || tiempo == null || impresiones == null || clics == null) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "interaccion_paginas", "metricas", item.cruda, "Alguna metrica de interaccion es negativa o no numerica.");
+      rechazados++;
+      continue;
+    }
+
+    if (eventos !== "" &amp;&amp; eventosClave !== "" &amp;&amp; parseFloat(eventosClave) > parseFloat(eventos)) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "interaccion_paginas", "eventos_clave", eventosClave, "Eventos clave mayor que numero de eventos.");
+      rechazados++;
+      continue;
+    }
+
+    var producto = relacionarProductoConPagina(pagina, titulo);
+
+    stgPaginas.push({
+      archivo_origen: nombreArchivo,
+      numero_fila_origen: String(item.numeroLinea),
+      fecha_inicio_periodo: convertirFechaOchoDigitos(tabla.periodo.inicio),
+      fecha_fin_periodo: convertirFechaOchoDigitos(tabla.periodo.fin),
+      fecha_referencia: fechaRef,
+      url_pagina: limpiarTexto(pagina),
+      titulo_pagina_original: limpiarTexto(titulo),
+      nombre_pagina_base: nombrePaginaDesdeRuta(pagina.length > 0 ? pagina : titulo),
+      producto_id_origen: producto.id,
+      nombre_producto_origen: producto.nombre,
+      vistas: vistas,
+      usuarios_activos: usuariosActivos,
+      sesiones: sesiones,
+      usuarios_nuevos: usuariosNuevos,
+      eventos: eventos,
+      eventos_clave: eventosClave,
+      tiempo_medio_segundos: tiempo,
+      impresiones_organicas: impresiones,
+      clics_organicos: clics,
+      estado_registro: "Valido"
+    });
+
+    generados++;
+  }
+
+  sumarResumen("stg_interaccion_paginas.csv", generados, rechazados, "Interaccion por paginas y paginas de producto. La clasificacion por etapa queda para el Pipeline 2.");
+}
+
+function tablaEsPaginas(tabla) {
+  var h = textoBase(tabla.encabezado.join(" "));
+  return h.indexOf("ruta_de_pagina") >= 0 ||
+         h.indexOf("pagina_de_destino") >= 0 ||
+         h.indexOf("titulo_de_pagina") >= 0;
+}
+
+// =====================================================
+// 7. Segmentacion: pais, ciudad y dispositivo
+// =====================================================
+
+function procesarTablaSegmentacionSimple(archivo, tabla) {
+  var nombreArchivo = String(archivo.getName());
+  var generados = 0;
+  var rechazados = 0;
+  var fechaRef = fechaReferencia(tabla.periodo);
+
+  for (var r = 0; r &lt; tabla.filas.length; r++) {
+    var item = tabla.filas[r];
+    var fila = item.valores;
+
+    var pais = obtenerValor(fila, ["pais"]);
+    var ciudad = obtenerValor(fila, ["ciudad"]);
+    var audiencia = obtenerValor(fila, ["nombre_de_la_audiencia"]);
+
+    if (pais.length == 0 &amp;&amp; ciudad.length == 0 &amp;&amp; audiencia.length > 0) {
+      // Audiencias no alimentan P4 directamente. Se omiten del staging de segmentacion.
+      continue;
+    }
+
+    var usuariosActivos = numeroNoNegativo(obtenerValor(fila, ["usuarios_activos"]));
+    var usuariosNuevos = numeroNoNegativo(obtenerValor(fila, ["usuarios_nuevos"]));
+    var sesiones = numeroNoNegativo(obtenerValor(fila, ["sesiones", "sesiones_con_interaccion"]));
+    var eventos = numeroNoNegativo(obtenerValor(fila, ["numero_de_eventos", "eventos"]));
+
+    if (usuariosActivos == null || usuariosNuevos == null || sesiones == null || eventos == null) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "segmentacion", "metricas", item.cruda, "Alguna metrica de segmentacion es negativa o no numerica.");
+      rechazados++;
+      continue;
+    }
+
+    if (usuariosActivos !== "" &amp;&amp; usuariosNuevos !== "" &amp;&amp; parseFloat(usuariosNuevos) > parseFloat(usuariosActivos)) {
+      agregarError(errores, nombreArchivo, item.numeroLinea, "segmentacion", "usuarios_nuevos", usuariosNuevos, "Usuarios nuevos mayor que usuarios activos.");
+      rechazados++;
+      continue;
+    }
+
+    stgSegmentacion.push({
+      archivo_origen: nombreArchivo,
+      numero_fila_origen: String(item.numeroLinea),
+      fecha_inicio_periodo: convertirFechaOchoDigitos(tabla.periodo.inicio),
+      fecha_fin_periodo: convertirFechaOchoDigitos(tabla.periodo.fin),
+      fecha_referencia: fechaRef,
+      pais_original: pais.length > 0 ? pais : "Costa Rica",
+      ubicacion_original: ciudad.length > 0 ? ciudad : (pais.length > 0 ? pais : "No identificado"),
+      dispositivo_original: "No identificado",
+      segmento_original: pais.length > 0 ? "Pais" : "Ciudad",
+      usuarios_activos: usuariosActivos,
+      usuarios_nuevos: usuariosNuevos,
+      sesiones: sesiones,
+      eventos: eventos,
+      transacciones: "",
+      estado_registro: "Valido"
+    });
+
+    generados++;
+  }
+
+  sumarResumen("stg_segmentacion_actividad.csv", generados, rechazados, "Segmentacion simple por pais o ciudad reportada.");
+}
+
+function tablaEsSegmentacionSimple(tabla) {
+  var h = textoBase(tabla.encabezado.join(" "));
+  return (h.indexOf("pais") >= 0 || h.indexOf("ciudad") >= 0) &amp;&amp;
+         h.indexOf("usuarios_activos") >= 0 &amp;&amp;
+         h.indexOf("categoria_de_dispositivo") &lt; 0;
+}
+
+function procesarDownloadDispositivos(archivo) {
+  var nombreArchivo = String(archivo.getName());
+  var lineas = leerLineas(archivo);
+  var periodo = periodoDelArchivo(lineas);
+  var fechaRef = fechaReferencia(periodo);
+  var generados = 0;
+  var rechazados = 0;
+
+  for (var i = 0; i &lt; lineas.length - 3; i++) {
+    var l1 = String(lineas[i]);
+    var l2 = String(lineas[i + 1]);
+    var l3 = String(lineas[i + 2]);
+
+    if (textoBase(l2).indexOf("categoria de dispositivo") >= 0 &amp;&amp; textoBase(l3).indexOf("ciudad") >= 0) {
+      var sep = separadorDeLinea(l3);
+      var segmentos = partirLineaCsv(l1, sep);
+      var dispositivos = partirLineaCsv(l2, sep);
+      var metricas = partirLineaCsv(l3, sep);
+
+      var j = i + 3;
+      while (j &lt; lineas.length) {
+        var cruda = String(lineas[j]);
+        if (cruda.trim().length == 0 || cruda.trim().indexOf("#") == 0) {
+          break;
+        }
+
+        var valores = partirLineaCsv(cruda, sep);
+        var ciudad = limpiarTexto(valores[0]);
+        var pais = limpiarTexto(valores[1]);
+
+        if (ciudad.length == 0 &amp;&amp; pais.length == 0) {
+          j++;
+          continue;
+        }
+
+        var grupos = {};
+
+        for (var c = 2; c &lt; metricas.length &amp;&amp; c &lt; valores.length; c++) {
+          var metrica = textoBase(metricas[c]);
+          var dispositivo = normalizarDispositivo(dispositivos[c]);
+          var segmento = limpiarTexto(segmentos[c]);
+
+          if (dispositivo.length == 0) {
+            agregarError(errores, nombreArchivo, j + 1, "segmentacion", "dispositivo", dispositivos[c], "Dispositivo invalido en tabla cruzada.");
+            rechazados++;
+            continue;
+          }
+
+          if (metrica.indexOf("usuarios activos") &lt; 0 &amp;&amp; metrica.indexOf("numero de eventos") &lt; 0 &amp;&amp; metrica.indexOf("transacciones") &lt; 0) {
+            continue;
+          }
+
+          var valor = numeroNoNegativo(valores[c]);
+          if (valor == null) {
+            agregarError(errores, nombreArchivo, j + 1, "segmentacion", metrica, valores[c], "Metrica no numerica o negativa en tabla cruzada.");
+            rechazados++;
+            continue;
+          }
+
+          var clave = ciudad + "|" + pais + "|" + dispositivo + "|" + segmento;
+          if (grupos[clave] == null) {
+            grupos[clave] = {
+              ciudad: ciudad,
+              pais: pais,
+              dispositivo: dispositivo,
+              segmento: segmento,
+              usuarios_activos: "",
+              eventos: "",
+              transacciones: ""
+            };
+          }
+
+          if (metrica.indexOf("usuarios activos") >= 0) { grupos[clave].usuarios_activos = valor; }
+          if (metrica.indexOf("numero de eventos") >= 0) { grupos[clave].eventos = valor; }
+          if (metrica.indexOf("transacciones") >= 0) { grupos[clave].transacciones = valor; }
+        }
+
+        for (var k in grupos) {
+          var g = grupos[k];
+
+          stgSegmentacion.push({
+            archivo_origen: nombreArchivo,
+            numero_fila_origen: String(j + 1),
+            fecha_inicio_periodo: convertirFechaOchoDigitos(periodo.inicio),
+            fecha_fin_periodo: convertirFechaOchoDigitos(periodo.fin),
+            fecha_referencia: fechaRef,
+            pais_original: g.pais.length > 0 ? g.pais : "No identificado",
+            ubicacion_original: g.ciudad.length > 0 ? g.ciudad : "No identificado",
+            dispositivo_original: g.dispositivo,
+            segmento_original: g.segmento.length > 0 ? g.segmento : "No identificado",
+            usuarios_activos: g.usuarios_activos,
+            usuarios_nuevos: "",
+            sesiones: "",
+            eventos: g.eventos,
+            transacciones: g.transacciones,
+            estado_registro: "Valido"
+          });
+
+          generados++;
+        }
+
+        j++;
+      }
+    }
+  }
+
+  if (generados > 0 || rechazados > 0) {
+    sumarResumen("stg_segmentacion_actividad.csv", generados, rechazados, "Segmentacion por ubicacion y dispositivo desde tabla cruzada.");
+  }
+}
+
+// =====================================================
+// 8. Recorrido de archivos restantes
+// =====================================================
+
+for (var iArchivo = 0; iArchivo &lt; archivos.length; iArchivo++) {
+  var archivo = archivos[iArchivo];
+
+  if (esArchivoCatalogo(archivo)) {
+    continue;
+  }
+
+  // El archivo download trae una tabla cruzada especial de ciudad/dispositivo.
+  if (nombreArchivoNormal(archivo).indexOf("download") >= 0) {
+    procesarDownloadDispositivos(archivo);
+  }
+
+  var tablas = leerTablas(archivo);
+
+  for (var t = 0; t &lt; tablas.length; t++) {
+    var tabla = tablas[t];
+
+    if (tablaEsTrafico(tabla)) {
+      procesarTablaTrafico(archivo, tabla);
+    }
+
+    if (tablaEsPaginas(tabla)) {
+      procesarTablaPaginas(archivo, tabla);
+    }
+
+    if (tablaEsSegmentacionSimple(tabla)) {
+      procesarTablaSegmentacionSimple(archivo, tabla);
+    }
+  }
+}
+
+// =====================================================
+// 9. Escritura de los cuatro staging y archivos de errores
+// =====================================================
+
+var columnasTrafico = [
+  "archivo_origen",
+  "numero_fila_origen",
+  "fecha_inicio_periodo",
+  "fecha_fin_periodo",
+  "fecha_referencia",
+  "fuente_acceso_original",
+  "medio_original",
+  "canal_acceso_original",
+  "sesiones",
+  "usuarios_activos",
+  "usuarios_nuevos",
+  "tipo_registro",
+  "estado_registro"
+];
+
+var columnasPaginas = [
+  "archivo_origen",
+  "numero_fila_origen",
+  "fecha_inicio_periodo",
+  "fecha_fin_periodo",
+  "fecha_referencia",
+  "url_pagina",
+  "titulo_pagina_original",
+  "nombre_pagina_base",
+  "producto_id_origen",
+  "nombre_producto_origen",
+  "vistas",
+  "usuarios_activos",
+  "sesiones",
+  "usuarios_nuevos",
+  "eventos",
+  "eventos_clave",
+  "tiempo_medio_segundos",
+  "impresiones_organicas",
+  "clics_organicos",
+  "estado_registro"
+];
+
+var columnasSegmentacion = [
+  "archivo_origen",
+  "numero_fila_origen",
+  "fecha_inicio_periodo",
+  "fecha_fin_periodo",
+  "fecha_referencia",
+  "pais_original",
+  "ubicacion_original",
+  "dispositivo_original",
+  "segmento_original",
+  "usuarios_activos",
+  "usuarios_nuevos",
+  "sesiones",
+  "eventos",
+  "transacciones",
+  "estado_registro"
+];
+
+var columnasCatalogo = [
+  "archivo_origen",
+  "numero_fila_origen",
+  "fecha_extraccion",
+  "producto_id_origen",
+  "nombre_producto",
+  "nombre_producto_normalizado",
+  "categoria",
+  "precio_usd",
+  "estado_producto",
+  "tipo_catalogo",
+  "url_producto",
+  "fuente_dato",
+  "estado_registro"
+];
+
+escribirCsv(new File(carpetaStaging, "stg_trafico_fuentes.csv"), columnasTrafico, stgTrafico);
+escribirCsv(new File(carpetaStaging, "stg_interaccion_paginas.csv"), columnasPaginas, stgPaginas);
+escribirCsv(new File(carpetaStaging, "stg_segmentacion_actividad.csv"), columnasSegmentacion, stgSegmentacion);
+escribirCsv(new File(carpetaStaging, "stg_catalogo_productos.csv"), columnasCatalogo, stgCatalogo);
+
+escribirCsv(
+  new File(carpetaErrores, "registros_rechazados.csv"),
+  [
+    "archivo_origen",
+    "numero_fila_origen",
+    "area_datos",
+    "campo",
+    "valor",
+    "motivo_rechazo",
+    "fecha_proceso"
+  ],
+  errores
+);
+
+var filasResumen = [];
+for (var nombreSalida in resumen) {
+  filasResumen.push({
+    archivo_salida: resumen[nombreSalida].archivo_salida,
+    registros_generados: String(resumen[nombreSalida].registros_generados),
+    registros_rechazados: String(resumen[nombreSalida].registros_rechazados),
+    observaciones: resumen[nombreSalida].observaciones
+  });
+}
+
+escribirCsv(
+  new File(carpetaErrores, "resumen_validacion_staging.csv"),
+  [
+    "archivo_salida",
+    "registros_generados",
+    "registros_rechazados",
+    "observaciones"
+  ],
+  filasResumen
+);
+
+var resultado_pipeline = "Pipeline 1 finalizado. Staging generado en: " + carpetaStaging.getAbsolutePath() +
+  ". Archivos creados: stg_trafico_fuentes.csv, stg_interaccion_paginas.csv, stg_segmentacion_actividad.csv, stg_catalogo_productos.csv.";
+</jsScript_script>
+      </jsScript>
+    </jsScripts>
+    <fields>
+      <field>
+        <name>resultado_pipeline</name>
+        <rename>resultado_pipeline</rename>
+        <type>String</type>
+        <length>-1</length>
+        <precision>-1</precision>
+        <replace>N</replace>
+      </field>
+    </fields>
+    <attributes/>
+    <GUI>
+      <xloc>380</xloc>
+      <yloc>190</yloc>
+    </GUI>
+  </transform>
+  <transform_error_handling>
+  </transform_error_handling>
+  <attributes/>
+</pipeline>
