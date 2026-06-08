@@ -1,0 +1,78 @@
+# ----------------------------------------
+# Catalogo de productos: oferta publicada
+# Cuenta: CercaClickcr.com
+# Propiedad: CercaClickcr.com
+# ----------------------------------------
+# Fuente operacional simulada a partir del catalogo publico revisado para el proyecto BI
+# Fecha de extraccion: 20260527
+fecha_extraccion,producto_id_origen,nombre_producto,categoria,precio_usd,estado_producto,tipo_catalogo,url_producto,fuente_dato
+2026-05-27,P001,Medias de Compresion Negras Unisex,Belleza,8.60,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/medias-de-compresion-negras-unisex,Sitio web CercaClick CR
+2026-05-27,P002,Medias de Compresion para Enfermeria - Talla S/M,Belleza,8.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/medias-de-compresion-para-enfermeria-talla-sm,Sitio web CercaClick CR
+2026-05-27,P003,Mascarilla Anatomica para Dormir,Accesorios,2.15,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/mascarilla-anatomica-para-dormir,Sitio web CercaClick CR
+2026-05-27,P004,Auriculares Conferencia Bluetooth,Electronica,6.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/auriculares-conferencia-bluetooth,Sitio web CercaClick CR
+2026-05-27,P005,Sombrilla Compacta Multifuncional,Accesorios,8.20,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/sombrilla-compacta-multifuncional,Sitio web CercaClick CR
+2026-05-27,P005,Sombrilla Compacta Multifuncional,Hogar,8.20,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/sombrilla-compacta-multifuncional,Sitio web CercaClick CR
+2026-05-27,P006,Mochila Cruzada Elegante y Compacta,Accesorios,12.61,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/mochila-cruzada-elegante-y-compacta,Sitio web CercaClick CR
+2026-05-27,P007,Bolso Compacto Must-Have,Accesorios,8.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/bolso-compacto-must-have,Sitio web CercaClick CR
+2026-05-27,P008,Kit Compacto Sellado al Vacio USB,Cocina,19.60,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/kit-compacto-sellado-al-vacio-usb,Sitio web CercaClick CR
+2026-05-27,P009,Repelente de Insectos Portatil y Elegante,Hogar,13.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/repelente-de-insectos-portatil-y-elegante,Sitio web CercaClick CR
+2026-05-27,P010,Adorable Ollita Temporizador de Cocina,Cocina,6.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/adorable-ollita-temporizador-de-cocina,Sitio web CercaClick CR
+2026-05-27,P011,Pistola de Pegamento Termofusible Inalambrica Recargable,Herramientas,39.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/pistola-de-pegamento-termofusible-inalambrica-recargable,Sitio web CercaClick CR
+2026-05-27,P012,Regleta de Alimentacion Multitoma de 11 Puertos con USB PD,Electronica,9.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/regleta-de-alimentacion-multitoma-de-11-puertos-con-usb-pd,Sitio web CercaClick CR
+2026-05-27,P013,Regleta de Alimentacion 12 Puertos USB PD,Electronica,10.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/regleta-de-alimentacion-12-puertos-usb-pd,Sitio web CercaClick CR
+2026-05-27,P014,50 o 10 unidades de Pinceles Multiuso para Reposteria y Arte,Arte,2.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/50-o-10-unidades-de-pinceles-multiuso-para-repostera-y-arte,Sitio web CercaClick CR
+2026-05-27,P014,50 o 10 unidades de Pinceles Multiuso para Reposteria y Arte,Pasteleria,2.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/50-o-10-unidades-de-pinceles-multiuso-para-repostera-y-arte,Sitio web CercaClick CR
+2026-05-27,P015,Pistola Profesional de Silicona Recargable,Herramientas,53.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/pistola-profesional-de-silicona-recargable,Sitio web CercaClick CR
+2026-05-27,P016,Kit de Manualidades de Pintura Escolar,Arte,5.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/kit-de-manualidades-de-pintura-escolar,Sitio web CercaClick CR
+2026-05-27,P017,Cable USB C a USB C Alta Velocidad 120W 1.5m,Electronica,4.30,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cable-usb-c-a-usb-c-alta-velocidad-120w-15m,Sitio web CercaClick CR
+2026-05-27,P018,Cable USB a USB C con Carga Rapida 120W 1.5 metros,Electronica,3.90,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cable-usb-a-usb-c-con-carga-rapida-120w-15-metros,Sitio web CercaClick CR
+2026-05-27,P019,Cable USB a USB C con Carga Rapida 120W 2 metros,Electronica,4.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cable-usb-a-usb-c-con-carga-rpida-120w-2-metros-6mtfg,Sitio web CercaClick CR
+2026-05-27,P020,Adaptador USB C Hub 8 en 1 multifuncion,Electronica,9.80,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/adaptador-usb-c-hub-8-en-1-multifuncion,Sitio web CercaClick CR
+2026-05-27,P021,Protector Antisalpicaduras de Silicona para Grifo,Cocina,12.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/protector-antisalpicaduras-de-silicona-para-grifo,Sitio web CercaClick CR
+2026-05-27,P022,Set de Raspador de Limpieza - 21 Piezas,Cocina,8.60,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/set-de-raspador-de-limpieza-21-piezas,Sitio web CercaClick CR
+2026-05-27,P023,60 Clips Pequenos Multiproposito de Alta Calidad,Oficina,3.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/60-clips-pequenos-multiproposito-de-alta-calidad,Sitio web CercaClick CR
+2026-05-27,P024,Cinta Metrica Retractil Portatil,Herramientas,6.30,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cinta-metrica-retractil-portatil,Sitio web CercaClick CR
+2026-05-27,P025,Colador de Silicona con Clip de Presion,Cocina,8.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/colador-de-silicona-con-clip-de-presion,Sitio web CercaClick CR
+2026-05-27,P026,Sombrilla Plegable Compacta de Bolso,Accesorios,8.26,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/sombrilla-plegable-compacta-de-bolso,Sitio web CercaClick CR
+2026-05-27,P026,Sombrilla Plegable Compacta de Bolso,Hogar,8.26,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/sombrilla-plegable-compacta-de-bolso,Sitio web CercaClick CR
+2026-05-27,P027,Tijeras de Cocina Multifuncionales de Acero Inoxidable,Cocina,4.17,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/tijeras-de-cocina-multifuncionales-de-acero-inoxidable,Sitio web CercaClick CR
+2026-05-27,P028,Libro Infantil Isabella y el Jardin de los Secretos,Libreria,26.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/libro-infantil-isabella-y-el-jardn-de-los-secretos,Sitio web CercaClick CR
+2026-05-27,P029,Paquete de 5 Lapices Arcoiris Multicolor,Oficina,6.14,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/paquete-de-5-lapices-arcoiris-multicolor,Sitio web CercaClick CR
+2026-05-27,P030,Afilador de Cuchillos Profesional 4 Etapas,Cocina,11.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/afilador-de-cuchillos-profesional-4-etapas,Sitio web CercaClick CR
+2026-05-27,P031,Paquete de 100 Bandas Elasticas Multicolor para Cabello,Belleza,3.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/paquete-de-100-bandas-elsticas-multicolor-para-cabello,Sitio web CercaClick CR
+2026-05-27,P032,Cepillo de Peinado Ergonomico 2 en 1,Belleza,5.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cepillo-de-peinado-ergonomico-2-en-1,Sitio web CercaClick CR
+2026-05-27,P033,Recipientes Desechables Ultra Elasticos para Conservacion de Alimentos,Cocina,4.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/recipientes-desechables-ultra-elsticos-para-conservacin-de-alimentos,Sitio web CercaClick CR
+2026-05-27,P034,Prensa de Ajos Multiusos de Acero Inoxidable,Cocina,3.30,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/prensa-de-ajos-multiusos-de-acero-inoxidable,Sitio web CercaClick CR
+2026-05-27,P035,Set Profesional de Pinzas Cosmeticas Acero Inoxidable 4 Piezas,Belleza,5.30,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/set-profesional-de-pinzas-cosmeticas-acero-inoxidable-4-piezas,Sitio web CercaClick CR
+2026-05-27,P036,Tapete de Salida de Bano Viscoelastico Antideslizante,Hogar,12.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/tapete-de-salida-de-bano-viscoelastico-antideslizante,Sitio web CercaClick CR
+2026-05-27,P037,Set de Bases de Silicona Antiadherente para Hornear - 3 piezas,Pasteleria,17.58,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/set-de-bases-de-silicona-antiadherente-para-hornear-3-piezas,Sitio web CercaClick CR
+2026-05-27,P038,Spray Mister de Aceite 200 ml,Cocina,9.90,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/spray-mister-de-aceite-200-ml,Sitio web CercaClick CR
+2026-05-27,P039,Brocha Rosada Retractil Multifuncional para Maquillaje,Belleza,3.30,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/brocha-rosada-retractil-multifuncional-para-maquillaje,Sitio web CercaClick CR
+2026-05-27,P040,Abridor Ajustable Antideslizante para Frascos y Botellas,Cocina,4.30,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/abridor-ajustable-antideslizante-para-frascos-y-botellas,Sitio web CercaClick CR
+2026-05-27,P041,Vaso Termico de Acero Inoxidable 800 ml con Pajilla y Mango Ergonomico,Hogar,22.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/vaso-termico-de-acero-inoxidable-800-ml-con-pajilla-y-mango-ergonomico,Sitio web CercaClick CR
+2026-05-27,P042,Bolso Organizador Impermeable para Cables y Accesorios,Accesorios,12.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/bolso-organizador-impermeable-para-cables-y-accesorios,Sitio web CercaClick CR
+2026-05-27,P043,Mochila Cruzada Compacta Unisex,Accesorios,12.10,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/mochila-cruzada-compacta-unisex,Sitio web CercaClick CR
+2026-05-27,P044,Termo Clasico de Acero Inoxidable 700 ml,Hogar,25.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/termo-clasico-de-acero-inoxidable-700-ml,Sitio web CercaClick CR
+2026-05-27,P045,Termo Elegance de Acero Inoxidable 600 ml,Hogar,31.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/termo-elegance-de-acero-inoxidable-600-ml,Sitio web CercaClick CR
+2026-05-27,P046,Cerradura de Equipaje TSA Elegante y Resistente,Accesorios,7.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cerradura-de-equipaje-tsa-elegante-y-resistente,Sitio web CercaClick CR
+2026-05-27,P047,Adorable Rollo de 500 Pegatinas Animalitos del Bosque o Gatitos,Arte,4.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/adorable-rollo-de-500-pegatinas-animalitos-del-bosque-o-gatitos,Sitio web CercaClick CR
+2026-05-27,P048,Paquete de 3 Tijeras Ultraafiladas Multicolor,Oficina,14.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/paquete-de-3-tijeras-ultraafiladas-multicolor,Sitio web CercaClick CR
+2026-05-27,P049,Tijeras de Corte Preciso para Cabello 6.5 pulgadas,Belleza,7.90,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/tijeras-de-corte-preciso-para-cabello-65-pulgadas,Sitio web CercaClick CR
+2026-05-27,P050,Juego de Manicure Profesional - 16 Piezas en Acero Inoxidable,Belleza,6.20,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/juego-de-manicure-profesional-16-piezas-en-acero-inoxidable,Sitio web CercaClick CR
+2026-05-27,P051,Sombrillas Plegables Elegantes,Accesorios,8.70,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/sombrillas-plegables-elegantes,Sitio web CercaClick CR
+2026-05-27,P052,Bascula Digital Compacta para Alimentos,Cocina,11.80,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/bascula-digital-compacta-para-alimentos,Sitio web CercaClick CR
+2026-05-27,P053,Cable USB C a USB C Alta Velocidad 120W 2M,Electronica,5.00,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cable-usb-c-a-usb-c-alta-velocidad-120w-2m,Sitio web CercaClick CR
+2026-05-27,P054,Mini Telescopio Monocular de Alta Potencia,Accesorios,5.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/mini-telescopio-monocular-de-alta-potencia,Sitio web CercaClick CR
+2026-05-27,P055,Organizador de Cocina Plegable Multifuncional,Cocina,18.90,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/organizador-de-cocina-plegable-multifuncional,Sitio web CercaClick CR
+2026-05-27,P056,Set de Ganchos Adhesivos Transparentes para Pared,Hogar,5.95,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/set-de-ganchos-adhesivos-transparentes-para-pared,Sitio web CercaClick CR
+2026-05-27,P057,Cepillo Limpiador para Botellas y Vasos,Cocina,6.75,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/cepillo-limpiador-para-botellas-y-vasos,Sitio web CercaClick CR
+2026-05-27,P058,Luz LED Recargable para Closet y Cocina,Hogar,15.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/luz-led-recargable-para-closet-y-cocina,Sitio web CercaClick CR
+2026-05-27,P058,Luz LED Recargable para Closet y Cocina,Electronica,15.40,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/luz-led-recargable-para-closet-y-cocina,Sitio web CercaClick CR
+2026-05-27,P059,Bolsas Reutilizables para Compras y Almacenamiento,Hogar,7.20,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/bolsas-reutilizables-para-compras-y-almacenamiento,Sitio web CercaClick CR
+2026-05-27,P060,Mini Selladora Portatil para Bolsas,Cocina,8.90,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/mini-selladora-portatil-para-bolsas,Sitio web CercaClick CR
+2026-05-27,P061,Soporte Ajustable para Celular y Tablet,Electronica,6.80,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/soporte-ajustable-para-celular-y-tablet,Sitio web CercaClick CR
+2026-05-27,P062,Estuche Organizador de Cables y Cargadores,Accesorios,9.60,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/estuche-organizador-de-cables-y-cargadores,Sitio web CercaClick CR
+2026-05-27,P063,Protector de Silicon para Control Remoto,Hogar,4.10,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/protector-de-silicon-para-control-remoto,Sitio web CercaClick CR
+2026-05-27,P064,Rodillo Quitapelusa Reutilizable,Hogar,5.20,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/rodillo-quitapelusa-reutilizable,Sitio web CercaClick CR
+2026-05-27,P065,Set de Esponjas Limpiadoras Multiuso,Cocina,4.80,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/set-de-esponjas-limpiadoras-multiuso,Sitio web CercaClick CR
+2026-05-27,P066,Dispensador de Jabon Recargable para Cocina,Cocina,10.50,Publicado,Catalogo principal,/https/wwwcercaclickcrcom/shop/p/dispensador-de-jabon-recargable-para-cocina,Sitio web CercaClick CR

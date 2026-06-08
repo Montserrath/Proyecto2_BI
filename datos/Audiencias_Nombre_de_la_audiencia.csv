@@ -1,0 +1,22 @@
+# ----------------------------------------
+# Audiencias: Nombre de la audiencia
+# Cuenta: CercaClickcr.com
+# Propiedad: CercaClickcr.com
+# ----------------------------------------
+# 
+# Todos los usuarios
+# Fecha de inicio: 20260428
+# Fecha de finalizacion: 20260527
+Nombre de la audiencia,Total de usuarios,Usuarios nuevos,Sesiones,Vistas por sesion,Duracion media de la sesion,Total de ingresos
+All Users,48,48,72,1.7361111111111112,74.32667490277778,0
+New Visitors,34,34,42,1.5,35.2,0
+Returning Visitors,14,0,30,2.1,122.4,0
+Product Viewers,12,8,18,2.4,96.5,0
+Cart Visitors,5,3,7,2,210.1,0
+Purchasers,2,0,7,2,363.01991200000003,0
+Engaged Users,28,18,36,2.1,92.4,0
+Search Visitors,17,13,21,1.8,58.7,0
+Direct Visitors,24,20,32,1.4,46.2,0
+Referral Visitors,11,8,14,1.7,53.8,0
+Checkout Visitors,4,2,6,2.3,226.5,0
+Contact Visitors,3,2,4,1.5,65.0,0
