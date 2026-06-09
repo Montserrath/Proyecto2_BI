@@ -1,0 +1,1013 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>02_modelo_dimensional</name>
+    <name_sync_with_filename>Y</name_sync_with_filename>
+    <description>Pipeline 2 del proyecto. Toma los CSV de etl/staging, construye dimensiones y hechos del modelo dimensional final, genera datos finales en etl/datos_finales y deja archivos de control en etl/errores. No crea fact de oportunidades; esa lectura se resuelve luego con vistas SQL.</description>
+    <extended_description/>
+    <pipeline_version/>
+    <pipeline_type>Normal</pipeline_type>
+    <pipeline_status>0</pipeline_status>
+    <parameters>
+    </parameters>
+    <capture_transform_performance>N</capture_transform_performance>
+    <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
+    <transform_performance_capturing_size_limit/>
+    <created_user>ChatGPT</created_user>
+    <created_date>2026/06/07 15:38:04.136</created_date>
+    <modified_user>ChatGPT</modified_user>
+    <modified_date>2026/06/07 15:38:04.136</modified_date>
+  </info>
+  <notepads>
+    <notepad>
+      <backgroundcolorblue>240</backgroundcolorblue>
+      <backgroundcolorgreen>255</backgroundcolorgreen>
+      <backgroundcolorred>240</backgroundcolorred>
+      <bordercolorblue>90</bordercolorblue>
+      <bordercolorgreen>145</bordercolorgreen>
+      <bordercolorred>70</bordercolorred>
+      <fontbold>N</fontbold>
+      <fontcolorblue>30</fontcolorblue>
+      <fontcolorgreen>30</fontcolorgreen>
+      <fontcolorred>30</fontcolorred>
+      <fontitalic>N</fontitalic>
+      <fontname>Noto Sans</fontname>
+      <fontsize>11</fontsize>
+      <height>-1</height>
+      <xloc>0</xloc>
+      <yloc>96</yloc>
+      <note>PIPELINE 2: transforma staging en el modelo dimensional final: dimensiones, hechos y archivos de control. Ubicar dentro de etl/pipelines.</note>
+      <width>980</width>
+    </notepad>
+  </notepads>
+  <order>
+    <hop>
+      <from>Generar fila de control</from>
+      <to>Transformar staging a modelo dimensional</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Transformar staging a modelo dimensional</from>
+      <to>Fin</to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+  <transform>
+    <name>Fin</name>
+    <type>Dummy</type>
+    <description>Fin del pipeline 2.</description>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>760</xloc>
+      <yloc>190</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Generar fila de control</name>
+    <type>RowGenerator</type>
+    <description>Genera una fila para activar la transformación dimensional.</description>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <length>-1</length>
+        <name>ejecucion</name>
+        <nullif>iniciar</nullif>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <type>String</type>
+      </field>
+    </fields>
+    <interval_in_ms>5000</interval_in_ms>
+    <last_time_field>FiveSecondsAgo</last_time_field>
+    <limit>1</limit>
+    <never_ending>N</never_ending>
+    <row_time_field>now</row_time_field>
+    <attributes/>
+    <GUI>
+      <xloc>110</xloc>
+      <yloc>190</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Transformar staging a modelo dimensional</name>
+    <type>ScriptValueMod</type>
+    <description>Lógica nativa en Hop mediante Modified JavaScript Value. Lee staging y genera dimensiones/hechos finales.</description>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <optimizationLevel>9</optimizationLevel>
+    <jsScripts>
+      <jsScript>
+        <jsScript_type>0</jsScript_type>
+        <jsScript_name>Transformación dimensional</jsScript_name>
+        <jsScript_script>// Pipeline 2 - Construcción del modelo dimensional
+
+// Lee los archivos de staging, crea las dimensiones y crea las tablas de hechos.
+
+var File = Packages.java.io.File;
+var FileInputStream = Packages.java.io.FileInputStream;
+var InputStreamReader = Packages.java.io.InputStreamReader;
+var BufferedReader = Packages.java.io.BufferedReader;
+var OutputStreamWriter = Packages.java.io.OutputStreamWriter;
+var FileOutputStream = Packages.java.io.FileOutputStream;
+var Normalizer = Packages.java.text.Normalizer;
+var SimpleDateFormat = Packages.java.text.SimpleDateFormat;
+var Date = Packages.java.util.Date;
+
+// =====================================================
+// 1. Carpetas del proyecto
+// =====================================================
+
+var carpetaPipeline = getVariable("Internal.Pipeline.Filename.Directory", ".");
+
+function rutaHopAArchivo(valorRuta) {
+  var texto = String(valorRuta);
+  if (texto.indexOf("file:") == 0) {
+    return new File(new Packages.java.net.URI(texto));
+  }
+  return new File(texto);
+}
+
+var carpetaPipelines = rutaHopAArchivo(carpetaPipeline);
+var carpetaEtl = carpetaPipelines.getParentFile();
+
+var carpetaStaging = new File(carpetaEtl, "staging");
+var carpetaErrores = new File(carpetaEtl, "errores");
+var carpetaFinales = new File(carpetaEtl, "datos_finales");
+var carpetaDimensiones = new File(carpetaFinales, "dimensiones");
+var carpetaHechos = new File(carpetaFinales, "hechos");
+
+if (!carpetaStaging.exists()) { carpetaStaging.mkdirs(); }
+if (!carpetaErrores.exists()) { carpetaErrores.mkdirs(); }
+if (!carpetaDimensiones.exists()) { carpetaDimensiones.mkdirs(); }
+if (!carpetaHechos.exists()) { carpetaHechos.mkdirs(); }
+
+function borrarCsvDeCarpeta(carpeta) {
+  var archivos = carpeta.listFiles();
+  if (archivos == null) { return; }
+
+  for (var i = 0; i &lt; archivos.length; i++) {
+    var f = archivos[i];
+    if (f.isFile() &amp;&amp; String(f.getName()).toLowerCase().endsWith(".csv")) {
+      f["delete"]();
+    }
+  }
+}
+
+// Pipeline 2 si limpia sus salidas finales, para no mezclar ejecuciones viejas.
+borrarCsvDeCarpeta(carpetaDimensiones);
+borrarCsvDeCarpeta(carpetaHechos);
+
+// =====================================================
+// 2. Funciones de lectura, escritura y limpieza
+// =====================================================
+
+function fechaProcesoActual() {
+  return String(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date()));
+}
+
+function quitarAcentos(texto) {
+  texto = String(texto == null ? "" : texto);
+  var normalizado = Normalizer.normalize(texto, Normalizer.Form.NFD);
+  return String(normalizado).replace(/[\u0300-\u036f]/g, "");
+}
+
+function textoBase(valor) {
+  return quitarAcentos(String(valor == null ? "" : valor).replace(/\u00A0/g, " ").trim()).toLowerCase();
+}
+
+function limpiarTexto(valor) {
+  var texto = String(valor == null ? "" : valor).replace(/^\uFEFF/, "").replace(/\u00A0/g, " ").trim();
+  texto = texto.replace(/\s+/g, " ");
+  return quitarAcentos(texto);
+}
+
+function normalizarClave(valor) {
+  var texto = textoBase(valor);
+  texto = texto.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (texto.length == 0) { texto = "no_identificado"; }
+  return texto;
+}
+
+function convertirNumero(valor) {
+  if (valor == null) { return "0"; }
+
+  var texto = String(valor).trim();
+  var base = textoBase(texto);
+
+  if (texto.length == 0 || base == "no identificado" || base == "no aplica") {
+    return "0";
+  }
+
+  texto = texto.replace(/\$/g, "").replace(/%/g, "").replace(/\s+/g, "");
+
+  if (texto.indexOf(",") >= 0 &amp;&amp; texto.indexOf(".") >= 0) {
+    if (texto.lastIndexOf(",") > texto.lastIndexOf(".")) {
+      texto = texto.replace(/\./g, "").replace(/,/g, ".");
+    } else {
+      texto = texto.replace(/,/g, "");
+    }
+  } else if (texto.indexOf(",") >= 0 &amp;&amp; texto.indexOf(".") &lt; 0) {
+    texto = texto.replace(/,/g, ".");
+  }
+
+  var numero = parseFloat(texto);
+  if (isNaN(numero)) { return "0"; }
+  if (numero &lt; 0) { return "0"; }
+
+  if (Math.floor(numero) == numero) { return String(Math.floor(numero)); }
+  return String(numero);
+}
+
+function csvEscape(valor) {
+  var texto = quitarAcentos(String(valor == null ? "" : valor));
+  if (texto.indexOf('"') >= 0) {
+    texto = texto.replace(/"/g, '""');
+  }
+  if (texto.indexOf(",") >= 0 || texto.indexOf("\n") >= 0 || texto.indexOf("\r") >= 0 || texto.indexOf('"') >= 0) {
+    texto = '"' + texto + '"';
+  }
+  return texto;
+}
+
+function escribirCsv(archivo, columnas, filas) {
+  var w = new OutputStreamWriter(new FileOutputStream(archivo), "UTF-8");
+  w.write(columnas.map(csvEscape).join(",") + "\n");
+
+  for (var r = 0; r &lt; filas.length; r++) {
+    var valores = [];
+    for (var c = 0; c &lt; columnas.length; c++) {
+      valores.push(csvEscape(filas[r][columnas[c]]));
+    }
+    w.write(valores.join(",") + "\n");
+  }
+
+  w.close();
+}
+
+function detectarSeparador(linea) {
+  var comas = (String(linea).match(/,/g) || []).length;
+  var puntoComa = (String(linea).match(/;/g) || []).length;
+  return puntoComa > comas ? ";" : ",";
+}
+
+function separarLineaCsv(linea, separador) {
+  linea = String(linea == null ? "" : linea);
+  var salida = [];
+  var actual = "";
+  var enComillas = false;
+
+  for (var i = 0; i &lt; linea.length; i++) {
+    var ch = linea.charAt(i);
+
+    if (ch == '"') {
+      if (enComillas &amp;&amp; i + 1 &lt; linea.length &amp;&amp; linea.charAt(i + 1) == '"') {
+        actual += '"';
+        i++;
+      } else {
+        enComillas = !enComillas;
+      }
+    } else if (ch == separador &amp;&amp; !enComillas) {
+      salida.push(actual);
+      actual = "";
+    } else {
+      actual += ch;
+    }
+  }
+
+  salida.push(actual);
+  return salida;
+}
+
+function leerCsv(nombreArchivo) {
+  var archivo = new File(carpetaStaging, nombreArchivo);
+  if (!archivo.exists()) {
+    throw "No se encontro el archivo de staging: " + archivo.getAbsolutePath();
+  }
+
+  var br = new BufferedReader(new InputStreamReader(new FileInputStream(archivo), "UTF-8"));
+  var primeraLinea = br.readLine();
+  var filas = [];
+
+  if (primeraLinea == null) {
+    br.close();
+    return filas;
+  }
+
+  var separador = detectarSeparador(primeraLinea);
+  var encabezado = separarLineaCsv(primeraLinea, separador);
+
+  for (var h = 0; h &lt; encabezado.length; h++) {
+    encabezado[h] = limpiarTexto(encabezado[h]);
+  }
+
+  var linea;
+  while ((linea = br.readLine()) != null) {
+    var partes = separarLineaCsv(linea, separador);
+    var fila = {};
+
+    for (var c = 0; c &lt; encabezado.length; c++) {
+      fila[encabezado[c]] = c &lt; partes.length ? limpiarTexto(partes[c]) : "";
+    }
+
+    filas.push(fila);
+  }
+
+  br.close();
+  return filas;
+}
+
+function valorFila(fila, campo) {
+  return fila[campo] == null ? "" : limpiarTexto(fila[campo]);
+}
+
+function agregarAdvertencia(lista, area, detalle) {
+  lista.push({
+    area_proceso: area,
+    detalle: detalle,
+    fecha_proceso: fechaProceso
+  });
+}
+
+// =====================================================
+// 3. Normalizaciones de negocio
+// =====================================================
+
+function fechaValida(fecha) {
+  fecha = limpiarTexto(fecha);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { return fecha; }
+  if (/^\d{8}$/.test(fecha)) {
+    return fecha.substring(0,4) + "-" + fecha.substring(4,6) + "-" + fecha.substring(6,8);
+  }
+  return "1900-01-01";
+}
+
+function fechaDeFila(fila, campoPrincipal) {
+  var fecha = valorFila(fila, campoPrincipal);
+  if (fecha.length == 0) { fecha = valorFila(fila, "fecha_referencia"); }
+  if (fecha.length == 0) { fecha = valorFila(fila, "fecha_fin_periodo"); }
+  if (fecha.length == 0) { fecha = valorFila(fila, "fecha_inicio_periodo"); }
+  return fechaValida(fecha);
+}
+
+function nombreMes(numeroMes) {
+  var meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  var n = parseInt(numeroMes, 10);
+  if (isNaN(n) || n &lt; 1 || n > 12) { return "No identificado"; }
+  return meses[n - 1];
+}
+
+function normalizarFuente(fuente) {
+  var original = limpiarTexto(fuente);
+  var base = textoBase(original);
+
+  if (base.length == 0 || base == "no identificado" || base == "not set") { return "No identificado"; }
+  if (base == "(direct)" || base == "direct" || base == "directo") { return "Acceso directo"; }
+  if (base.indexOf("google") >= 0) { return "Google"; }
+  if (base.indexOf("facebook") >= 0) { return "Facebook"; }
+  if (base.indexOf("bing") >= 0) { return "Bing"; }
+  if (base.indexOf("whatsapp") >= 0 || base == "wa_me") { return "WhatsApp"; }
+  if (base.indexOf("cercaclick") >= 0) { return "CercaClick CR"; }
+
+  return original;
+}
+
+function normalizarMedio(medio) {
+  var original = limpiarTexto(medio);
+  var base = textoBase(original);
+
+  if (base.length == 0 || base == "no identificado") { return "No identificado"; }
+  if (base == "none" || base == "(none)" || base == "direct") { return "none"; }
+  if (base == "organic" || base == "organico") { return "organic"; }
+  if (base == "referral" || base == "referido") { return "referral"; }
+  if (base == "social" || base == "organic_social" || base == "social_organic") { return "social"; }
+
+  return original;
+}
+
+function canalDesdeFuenteYMedio(fuente, medio, canalOriginal) {
+  var canalBase = textoBase(canalOriginal);
+  var fuenteBase = textoBase(fuente);
+  var medioBase = textoBase(medio);
+
+  if (canalBase.indexOf("direct") >= 0 || canalBase.indexOf("directo") >= 0) { return "Directo"; }
+  if (canalBase.indexOf("organic") >= 0 || canalBase.indexOf("organica") >= 0) { return "Busqueda organica"; }
+  if (canalBase.indexOf("referral") >= 0 || canalBase.indexOf("referido") >= 0) { return "Referido"; }
+  if (canalBase.indexOf("social") >= 0) { return "Social organico"; }
+
+  if (fuenteBase == "acceso directo" || medioBase == "none") { return "Directo"; }
+  if (fuenteBase == "google" || fuenteBase == "bing" || medioBase == "organic") { return "Busqueda organica"; }
+  if (fuenteBase == "facebook" || fuenteBase == "whatsapp" || medioBase == "social") { return "Social organico"; }
+  if (medioBase == "referral" || fuenteBase == "cercaclick cr") { return "Referido"; }
+
+  return "No identificado";
+}
+
+function urlLimpia(url) {
+  var texto = limpiarTexto(url);
+  if (texto.length == 0 || textoBase(texto) == "no identificado") { return "No identificado"; }
+  return texto;
+}
+
+function tipoPagina(url, nombreBase, productoId) {
+  var u = textoBase(url);
+  var n = textoBase(nombreBase);
+  var p = textoBase(productoId);
+
+  if (p.length > 0 &amp;&amp; p != "no aplica" &amp;&amp; p != "no identificado") { return "Producto"; }
+  if (u == "/" || n == "inicio" || u.indexOf("home") >= 0) { return "Inicio"; }
+  if (u.indexOf("producto") >= 0 || u.indexOf("product") >= 0) { return "Producto"; }
+  if (u.indexOf("categoria") >= 0 || u.indexOf("tienda") >= 0 || u.indexOf("shop") >= 0) { return "Tienda"; }
+  if (u.indexOf("buscar") >= 0 || u.indexOf("search") >= 0 || u.indexOf("busqueda") >= 0) { return "Busqueda"; }
+  if (u.indexOf("carrito") >= 0 || u.indexOf("cart") >= 0) { return "Carrito"; }
+  if (u.indexOf("checkout") >= 0 || u.indexOf("pago") >= 0) { return "Checkout"; }
+  if (u.indexOf("contact") >= 0 || u.indexOf("contacto") >= 0) { return "Contacto"; }
+  if (u.indexOf("faq") >= 0 || u.indexOf("preguntas") >= 0) { return "Preguntas frecuentes"; }
+  if (u.indexOf("orden") >= 0 || u.indexOf("order") >= 0) { return "Orden"; }
+  if (u.indexOf("info") >= 0 || u.indexOf("acerca") >= 0) { return "Informacion"; }
+
+  return "Otro";
+}
+
+function etapaDesdeTipo(tipo) {
+  if (tipo == "Inicio") { return "Navegacion general"; }
+  if (tipo == "Tienda" || tipo == "Busqueda") { return "Exploracion"; }
+  if (tipo == "Producto") { return "Interes en producto"; }
+  if (tipo == "Carrito") { return "Intencion de compra"; }
+  if (tipo == "Checkout") { return "Proceso de compra"; }
+  if (tipo == "Orden") { return "Orden generada"; }
+  return "Navegacion general";
+}
+
+function normalizarDispositivo(dispositivo) {
+  var base = textoBase(dispositivo);
+
+  if (base.length == 0 || base == "no identificado" || base == "no aplica") { return "No identificado"; }
+  if (base == "mobile" || base == "movil" || base == "celular" || base == "telefono") { return "Movil"; }
+  if (base == "desktop" || base == "escritorio" || base == "computadora" || base == "ordenador") { return "Escritorio"; }
+  if (base == "tablet" || base == "tableta") { return "Tableta"; }
+
+  return "No identificado";
+}
+
+function normalizarPais(pais) {
+  var original = limpiarTexto(pais);
+  var base = textoBase(original);
+
+  if (base.length == 0 || base == "no identificado") { return "No identificado"; }
+  if (base == "costa rica" || base == "cr") { return "Costa Rica"; }
+  if (base == "united states" || base == "estados unidos" || base == "usa") { return "Estados Unidos"; }
+  if (base == "mexico") { return "Mexico"; }
+  if (base == "panama") { return "Panama"; }
+  if (base == "spain" || base == "espana") { return "Espana"; }
+  if (base == "united kingdom" || base == "reino unido") { return "Reino Unido"; }
+
+  return original;
+}
+
+function tipoUbicacion(pais, ubicacion) {
+  var p = textoBase(pais);
+  var u = textoBase(ubicacion);
+
+  if (u.length == 0 || u == "no identificado") { return "Pais"; }
+  if (p == "costa rica") { return "Ubicacion reportada"; }
+  return "Ciudad reportada";
+}
+
+function normalizarCategoria(categoria) {
+  var base = textoBase(categoria);
+
+  if (base == "hogar") { return "Hogar"; }
+  if (base == "cocina") { return "Cocina"; }
+  if (base == "libreria") { return "Libreria"; }
+  if (base == "pasteleria") { return "Pasteleria"; }
+  if (base == "accesorios") { return "Accesorios"; }
+  if (base == "belleza") { return "Belleza"; }
+  if (base == "electronica") { return "Electronica"; }
+  if (base == "herramientas") { return "Herramientas"; }
+  if (base == "oficina") { return "Oficina"; }
+  if (base == "arte") { return "Arte"; }
+  if (base == "usados variados") { return "Usados variados"; }
+
+  var texto = limpiarTexto(categoria);
+  return texto.length > 0 ? texto : "No identificado";
+}
+
+function normalizarTipoCatalogo(tipo) {
+  var base = textoBase(tipo);
+  if (base.indexOf("usado") >= 0) { return "Usados variados"; }
+  if (base.length == 0 || base == "no identificado") { return "Catalogo principal"; }
+  return limpiarTexto(tipo);
+}
+
+// =====================================================
+// 4. Carga de staging
+// =====================================================
+
+var fechaProceso = fechaProcesoActual();
+var advertencias = [];
+
+var stgTrafico = leerCsv("stg_trafico_fuentes.csv");
+var stgPaginas = leerCsv("stg_interaccion_paginas.csv");
+var stgSegmentacion = leerCsv("stg_segmentacion_actividad.csv");
+var stgCatalogo = leerCsv("stg_catalogo_productos.csv");
+
+// =====================================================
+// 5. Dimension tiempo
+// =====================================================
+
+var fechas = {};
+
+function agregarFecha(fecha) {
+  fecha = fechaValida(fecha);
+  if (fecha == "1900-01-01") { return; }
+  fechas[fecha] = true;
+}
+
+for (var i = 0; i &lt; stgTrafico.length; i++) { agregarFecha(fechaDeFila(stgTrafico[i], "fecha_referencia")); }
+for (var p = 0; p &lt; stgPaginas.length; p++) { agregarFecha(fechaDeFila(stgPaginas[p], "fecha_referencia")); }
+for (var s = 0; s &lt; stgSegmentacion.length; s++) { agregarFecha(fechaDeFila(stgSegmentacion[s], "fecha_referencia")); }
+for (var c = 0; c &lt; stgCatalogo.length; c++) { agregarFecha(fechaDeFila(stgCatalogo[c], "fecha_extraccion")); }
+
+var listaFechas = [];
+for (var f in fechas) { if (fechas.hasOwnProperty(f)) { listaFechas.push(f); } }
+listaFechas.sort();
+
+var dimTiempo = [];
+var skTiempo = {};
+
+for (var ft = 0; ft &lt; listaFechas.length; ft++) {
+  var fecha = listaFechas[ft];
+  var anio = fecha.substring(0, 4);
+  var mes = fecha.substring(5, 7);
+  var dia = fecha.substring(8, 10);
+  var sk = String(ft + 1);
+
+  skTiempo[fecha] = sk;
+  dimTiempo.push({
+    sk_tiempo: sk,
+    fecha: fecha,
+    dia: dia,
+    mes: mes,
+    nombre_mes: nombreMes(mes),
+    anio: anio,
+    periodo_analitico: anio + "-" + mes
+  });
+}
+
+if (dimTiempo.length == 0) {
+  agregarAdvertencia(advertencias, "dim_tiempo", "No se detectaron fechas validas. Se crea fecha tecnica 1900-01-01 para evitar fallos de carga.");
+  skTiempo["1900-01-01"] = "1";
+  dimTiempo.push({
+    sk_tiempo: "1",
+    fecha: "1900-01-01",
+    dia: "01",
+    mes: "01",
+    nombre_mes: "Enero",
+    anio: "1900",
+    periodo_analitico: "Sin periodo"
+  });
+}
+
+function obtenerSkTiempo(fecha) {
+  fecha = fechaValida(fecha);
+  if (skTiempo[fecha] != null) { return skTiempo[fecha]; }
+  return skTiempo["1900-01-01"] != null ? skTiempo["1900-01-01"] : "1";
+}
+
+// =====================================================
+// 6. Dimension fuente de trafico y fact de acceso
+// =====================================================
+
+var dimFuente = [];
+var skFuente = {};
+var factAcceso = [];
+
+function obtenerSkFuente(fuenteOriginal, medioOriginal, canalOriginal) {
+  var fuente = normalizarFuente(fuenteOriginal);
+  var medio = normalizarMedio(medioOriginal);
+  var canal = canalDesdeFuenteYMedio(fuente, medio, canalOriginal);
+  var clave = canal + "|" + fuente + "|" + medio;
+
+  if (skFuente[clave] == null) {
+    var sk = String(dimFuente.length + 1);
+    skFuente[clave] = sk;
+    dimFuente.push({
+      sk_fuente_trafico: sk,
+      canal_acceso: canal,
+      fuente_acceso: fuente,
+      medio_original: medio
+    });
+  }
+
+  return skFuente[clave];
+}
+
+for (var at = 0; at &lt; stgTrafico.length; at++) {
+  var filaT = stgTrafico[at];
+  var fechaT = fechaDeFila(filaT, "fecha_referencia");
+  var skF = obtenerSkFuente(valorFila(filaT, "fuente_acceso_original"), valorFila(filaT, "medio_original"), valorFila(filaT, "canal_acceso_original"));
+
+  factAcceso.push({
+    sk_fact_acceso_trafico: String(factAcceso.length + 1),
+    sk_tiempo: obtenerSkTiempo(fechaT),
+    sk_fuente_trafico: skF,
+    sesiones: convertirNumero(valorFila(filaT, "sesiones")),
+    usuarios_activos: convertirNumero(valorFila(filaT, "usuarios_activos")),
+    usuarios_nuevos: convertirNumero(valorFila(filaT, "usuarios_nuevos"))
+  });
+}
+
+// =====================================================
+// 7. Dimensiones producto y categoria, y fact de catalogo
+// =====================================================
+
+var dimProducto = [];
+var skProducto = {};
+var productoPorId = {};
+var productoPorNombre = {};
+var dimCategoria = [];
+var skCategoria = {};
+var factCatalogo = [];
+
+function obtenerSkProducto(idOrigen, nombre, nombreNormalizado, estado, tipoCatalogo) {
+  idOrigen = limpiarTexto(idOrigen);
+  nombre = limpiarTexto(nombre);
+  nombreNormalizado = limpiarTexto(nombreNormalizado);
+  estado = limpiarTexto(estado);
+  tipoCatalogo = normalizarTipoCatalogo(tipoCatalogo);
+
+  if (idOrigen.length == 0 || textoBase(idOrigen) == "no identificado") {
+    idOrigen = "SIN_ID_" + normalizarClave(nombre);
+  }
+
+  if (nombre.length == 0) { nombre = "No identificado"; }
+  if (nombreNormalizado.length == 0) { nombreNormalizado = normalizarClave(nombre); }
+  if (estado.length == 0 || textoBase(estado) == "no identificado") { estado = "Publicado"; }
+
+  var clave = idOrigen;
+
+  if (skProducto[clave] == null) {
+    var sk = String(dimProducto.length + 1);
+    skProducto[clave] = sk;
+    dimProducto.push({
+      sk_producto: sk,
+      producto_id_origen: idOrigen,
+      nombre_producto: nombre,
+      nombre_normalizado: nombreNormalizado,
+      estado_producto: estado,
+      tipo_catalogo: tipoCatalogo
+    });
+  }
+
+  productoPorId[idOrigen] = {
+    sk: skProducto[clave],
+    nombre: nombre,
+    normalizado: nombreNormalizado
+  };
+
+  productoPorNombre[nombreNormalizado] = {
+    sk: skProducto[clave],
+    id: idOrigen,
+    nombre: nombre
+  };
+
+  return skProducto[clave];
+}
+
+function asegurarProductoNoAplica() {
+  return obtenerSkProducto("NO_APLICA", "No aplica", "no_aplica", "No aplica", "No aplica");
+}
+
+var skProductoNoAplica = asegurarProductoNoAplica();
+
+function obtenerSkCategoria(categoria) {
+  var normalizada = normalizarCategoria(categoria);
+  var clave = normalizarClave(normalizada);
+
+  if (skCategoria[clave] == null) {
+    var sk = String(dimCategoria.length + 1);
+    skCategoria[clave] = sk;
+    dimCategoria.push({
+      sk_categoria: sk,
+      nombre_categoria: normalizada
+    });
+  }
+
+  return skCategoria[clave];
+}
+
+for (var fc = 0; fc &lt; stgCatalogo.length; fc++) {
+  var filaC = stgCatalogo[fc];
+  var fechaC = fechaDeFila(filaC, "fecha_extraccion");
+  var skProd = obtenerSkProducto(
+    valorFila(filaC, "producto_id_origen"),
+    valorFila(filaC, "nombre_producto"),
+    valorFila(filaC, "nombre_producto_normalizado"),
+    valorFila(filaC, "estado_producto"),
+    valorFila(filaC, "tipo_catalogo")
+  );
+  var skCat = obtenerSkCategoria(valorFila(filaC, "categoria"));
+  var precio = convertirNumero(valorFila(filaC, "precio_usd"));
+
+  factCatalogo.push({
+    sk_fact_oferta_catalogo: String(factCatalogo.length + 1),
+    sk_tiempo: obtenerSkTiempo(fechaC),
+    sk_producto: skProd,
+    sk_categoria: skCat,
+    producto_publicado: "1",
+    precio_usd: precio,
+    valor_comercial_potencial_usd: precio
+  });
+}
+
+// =====================================================
+// 8. Dimension pagina y fact de interaccion
+// =====================================================
+
+var dimPagina = [];
+var skPagina = {};
+var factInteraccion = [];
+
+function obtenerSkPagina(url, nombreBase, productoId) {
+  var urlNorm = urlLimpia(url);
+  var nombre = limpiarTexto(nombreBase);
+  if (nombre.length == 0 || textoBase(nombre) == "no identificado") { nombre = urlNorm; }
+  if (nombre.length == 0) { nombre = "No identificado"; }
+
+  var tipo = tipoPagina(urlNorm, nombre, productoId);
+  var etapa = etapaDesdeTipo(tipo);
+  var esProducto = tipo == "Producto" ? "Si" : "No";
+  var clave = normalizarClave(urlNorm + "|" + nombre + "|" + productoId);
+
+  if (skPagina[clave] == null) {
+    var sk = String(dimPagina.length + 1);
+    skPagina[clave] = sk;
+    dimPagina.push({
+      sk_pagina: sk,
+      nombre_pagina: nombre,
+      tipo_pagina: tipo,
+      etapa_recorrido: etapa,
+      es_pagina_producto: esProducto,
+      url_normalizada: urlNorm
+    });
+  }
+
+  return skPagina[clave];
+}
+
+function skProductoDesdePagina(productoId, nombreProducto) {
+  productoId = limpiarTexto(productoId);
+  nombreProducto = limpiarTexto(nombreProducto);
+
+  if (productoId.length > 0 &amp;&amp; textoBase(productoId) != "no aplica" &amp;&amp; textoBase(productoId) != "no identificado") {
+    if (skProducto[productoId] != null) { return skProducto[productoId]; }
+
+    // Si aparece una pagina de producto que no estaba en catalogo, se registra para no perder la interaccion.
+    agregarAdvertencia(advertencias, "dim_producto", "Producto de interaccion sin coincidencia en catalogo: " + productoId + " / " + nombreProducto);
+    return obtenerSkProducto(productoId, nombreProducto.length > 0 ? nombreProducto : productoId, normalizarClave(nombreProducto), "No identificado", "No identificado");
+  }
+
+  var nombreNorm = normalizarClave(nombreProducto);
+  if (productoPorNombre[nombreNorm] != null) { return productoPorNombre[nombreNorm].sk; }
+
+  return skProductoNoAplica;
+}
+
+for (var ip = 0; ip &lt; stgPaginas.length; ip++) {
+  var filaP = stgPaginas[ip];
+  var fechaP = fechaDeFila(filaP, "fecha_referencia");
+  var productoId = valorFila(filaP, "producto_id_origen");
+  var nombreProducto = valorFila(filaP, "nombre_producto_origen");
+  var skProdPagina = skProductoDesdePagina(productoId, nombreProducto);
+  var skPag = obtenerSkPagina(valorFila(filaP, "url_pagina"), valorFila(filaP, "nombre_pagina_base"), productoId);
+
+  factInteraccion.push({
+    sk_fact_interaccion_pagina: String(factInteraccion.length + 1),
+    sk_tiempo: obtenerSkTiempo(fechaP),
+    sk_pagina: skPag,
+    sk_producto: skProdPagina,
+    vistas: convertirNumero(valorFila(filaP, "vistas")),
+    usuarios_activos: convertirNumero(valorFila(filaP, "usuarios_activos")),
+    sesiones: convertirNumero(valorFila(filaP, "sesiones")),
+    usuarios_nuevos: convertirNumero(valorFila(filaP, "usuarios_nuevos")),
+    eventos: convertirNumero(valorFila(filaP, "eventos")),
+    eventos_clave: convertirNumero(valorFila(filaP, "eventos_clave")),
+    tiempo_medio_segundos: convertirNumero(valorFila(filaP, "tiempo_medio_segundos")),
+    impresiones_organicas: convertirNumero(valorFila(filaP, "impresiones_organicas")),
+    clics_organicos: convertirNumero(valorFila(filaP, "clics_organicos"))
+  });
+}
+
+// =====================================================
+// 9. Dimensiones ubicacion y dispositivo, y fact de segmentacion
+// =====================================================
+
+var dimUbicacion = [];
+var skUbicacion = {};
+var dimDispositivo = [];
+var skDispositivo = {};
+var factSegmentacion = [];
+
+function obtenerSkUbicacion(paisOriginal, ubicacionOriginal) {
+  var pais = normalizarPais(paisOriginal);
+  var ubicacion = limpiarTexto(ubicacionOriginal);
+
+  if (ubicacion.length == 0 || textoBase(ubicacion) == "no identificado" || textoBase(ubicacion) == "no aplica") {
+    ubicacion = "No identificado";
+  }
+
+  var tipo = tipoUbicacion(pais, ubicacion);
+  var esCR = normalizarPais(pais) == "Costa Rica" ? "Si" : "No";
+  var clave = pais + "|" + ubicacion + "|" + tipo;
+
+  if (skUbicacion[clave] == null) {
+    var sk = String(dimUbicacion.length + 1);
+    skUbicacion[clave] = sk;
+    dimUbicacion.push({
+      sk_ubicacion: sk,
+      pais: pais,
+      ubicacion_reportada: ubicacion,
+      tipo_ubicacion: tipo,
+      es_costa_rica: esCR
+    });
+  }
+
+  return skUbicacion[clave];
+}
+
+function obtenerSkDispositivo(dispositivoOriginal) {
+  var dispositivo = normalizarDispositivo(dispositivoOriginal);
+  var clave = normalizarClave(dispositivo);
+
+  if (skDispositivo[clave] == null) {
+    var sk = String(dimDispositivo.length + 1);
+    skDispositivo[clave] = sk;
+    dimDispositivo.push({
+      sk_dispositivo: sk,
+      categoria_dispositivo: dispositivo
+    });
+  }
+
+  return skDispositivo[clave];
+}
+
+for (var fs = 0; fs &lt; stgSegmentacion.length; fs++) {
+  var filaS = stgSegmentacion[fs];
+  var fechaS = fechaDeFila(filaS, "fecha_referencia");
+  var skU = obtenerSkUbicacion(valorFila(filaS, "pais_original"), valorFila(filaS, "ubicacion_original"));
+  var skD = obtenerSkDispositivo(valorFila(filaS, "dispositivo_original"));
+
+  factSegmentacion.push({
+    sk_fact_segmentacion_actividad: String(factSegmentacion.length + 1),
+    sk_tiempo: obtenerSkTiempo(fechaS),
+    sk_ubicacion: skU,
+    sk_dispositivo: skD,
+    usuarios_activos: convertirNumero(valorFila(filaS, "usuarios_activos")),
+    usuarios_nuevos: convertirNumero(valorFila(filaS, "usuarios_nuevos")),
+    sesiones: convertirNumero(valorFila(filaS, "sesiones")),
+    eventos: convertirNumero(valorFila(filaS, "eventos"))
+  });
+}
+
+// =====================================================
+// 10. Salidas finales
+// =====================================================
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_tiempo.csv"),
+  ["sk_tiempo", "fecha", "dia", "mes", "nombre_mes", "anio", "periodo_analitico"],
+  dimTiempo
+);
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_fuente_trafico.csv"),
+  ["sk_fuente_trafico", "canal_acceso", "fuente_acceso", "medio_original"],
+  dimFuente
+);
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_pagina.csv"),
+  ["sk_pagina", "nombre_pagina", "tipo_pagina", "etapa_recorrido", "es_pagina_producto", "url_normalizada"],
+  dimPagina
+);
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_producto.csv"),
+  ["sk_producto", "producto_id_origen", "nombre_producto", "nombre_normalizado", "estado_producto", "tipo_catalogo"],
+  dimProducto
+);
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_categoria.csv"),
+  ["sk_categoria", "nombre_categoria"],
+  dimCategoria
+);
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_ubicacion.csv"),
+  ["sk_ubicacion", "pais", "ubicacion_reportada", "tipo_ubicacion", "es_costa_rica"],
+  dimUbicacion
+);
+
+escribirCsv(
+  new File(carpetaDimensiones, "dim_dispositivo.csv"),
+  ["sk_dispositivo", "categoria_dispositivo"],
+  dimDispositivo
+);
+
+escribirCsv(
+  new File(carpetaHechos, "fact_acceso_trafico.csv"),
+  ["sk_fact_acceso_trafico", "sk_tiempo", "sk_fuente_trafico", "sesiones", "usuarios_activos", "usuarios_nuevos"],
+  factAcceso
+);
+
+escribirCsv(
+  new File(carpetaHechos, "fact_interaccion_pagina.csv"),
+  ["sk_fact_interaccion_pagina", "sk_tiempo", "sk_pagina", "sk_producto", "vistas", "usuarios_activos", "sesiones", "usuarios_nuevos", "eventos", "eventos_clave", "tiempo_medio_segundos", "impresiones_organicas", "clics_organicos"],
+  factInteraccion
+);
+
+escribirCsv(
+  new File(carpetaHechos, "fact_segmentacion_actividad.csv"),
+  ["sk_fact_segmentacion_actividad", "sk_tiempo", "sk_ubicacion", "sk_dispositivo", "usuarios_activos", "usuarios_nuevos", "sesiones", "eventos"],
+  factSegmentacion
+);
+
+escribirCsv(
+  new File(carpetaHechos, "fact_oferta_catalogo.csv"),
+  ["sk_fact_oferta_catalogo", "sk_tiempo", "sk_producto", "sk_categoria", "producto_publicado", "precio_usd", "valor_comercial_potencial_usd"],
+  factCatalogo
+);
+
+// =====================================================
+// 11. Control de ejecucion
+// =====================================================
+
+var resumen = [
+  {archivo_salida:"dim_tiempo.csv", tipo_salida:"dimension", registros:String(dimTiempo.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"dim_fuente_trafico.csv", tipo_salida:"dimension", registros:String(dimFuente.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"dim_pagina.csv", tipo_salida:"dimension", registros:String(dimPagina.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"dim_producto.csv", tipo_salida:"dimension", registros:String(dimProducto.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"dim_categoria.csv", tipo_salida:"dimension", registros:String(dimCategoria.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"dim_ubicacion.csv", tipo_salida:"dimension", registros:String(dimUbicacion.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"dim_dispositivo.csv", tipo_salida:"dimension", registros:String(dimDispositivo.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"fact_acceso_trafico.csv", tipo_salida:"hecho", registros:String(factAcceso.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"fact_interaccion_pagina.csv", tipo_salida:"hecho", registros:String(factInteraccion.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"fact_segmentacion_actividad.csv", tipo_salida:"hecho", registros:String(factSegmentacion.length), fecha_proceso:fechaProceso},
+  {archivo_salida:"fact_oferta_catalogo.csv", tipo_salida:"hecho", registros:String(factCatalogo.length), fecha_proceso:fechaProceso}
+];
+
+escribirCsv(
+  new File(carpetaErrores, "resumen_modelo_dimensional.csv"),
+  ["archivo_salida", "tipo_salida", "registros", "fecha_proceso"],
+  resumen
+);
+
+escribirCsv(
+  new File(carpetaErrores, "advertencias_modelo_dimensional.csv"),
+  ["area_proceso", "detalle", "fecha_proceso"],
+  advertencias
+);
+
+var resultado_pipeline = "Pipeline 2 finalizado. Dimensiones creadas: " + dimTiempo.length + ", " + dimFuente.length + ", " + dimPagina.length + ", " + dimProducto.length + ", " + dimCategoria.length + ", " + dimUbicacion.length + ", " + dimDispositivo.length + ". Hechos creados: " + factAcceso.length + ", " + factInteraccion.length + ", " + factSegmentacion.length + ", " + factCatalogo.length + ".";
+</jsScript_script>
+      </jsScript>
+    </jsScripts>
+    <fields>
+      <field>
+        <name>resultado_pipeline</name>
+        <rename>resultado_pipeline</rename>
+        <type>String</type>
+        <length>-1</length>
+        <precision>-1</precision>
+        <replace>N</replace>
+      </field>
+    </fields>
+    <attributes/>
+    <GUI>
+      <xloc>420</xloc>
+      <yloc>190</yloc>
+    </GUI>
+  </transform>
+  <transform_error_handling>
+  </transform_error_handling>
+  <attributes/>
+</pipeline>
