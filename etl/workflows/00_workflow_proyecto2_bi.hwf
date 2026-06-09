@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow>
+  <name>00_workflow_proyecto2_bi</name>
+  <name_sync_with_filename>N</name_sync_with_filename>
+  <description>Workflow principal del ETL del Proyecto 2 BI. Ejecuta el pipeline de staging y validación, seguido del pipeline de modelo dimensional. No utiliza carpeta de logs; los controles quedan en etl/errores.</description>
+  <extended_description/>
+  <workflow_version/>
+  <workflow_status>0</workflow_status>
+  <created_user>ChatGPT</created_user>
+  <created_date>2026/05/31 00:00:00.000</created_date>
+  <modified_user>ChatGPT</modified_user>
+  <modified_date>2026/05/31 00:00:00.000</modified_date>
+  <parameters>
+    </parameters>
+  <actions>
+    <action>
+      <name>START</name>
+      <description>Inicio del workflow</description>
+      <type>SPECIAL</type>
+      <attributes/>
+      <DayOfMonth>1</DayOfMonth>
+      <doNotWaitOnFirstExecution>N</doNotWaitOnFirstExecution>
+      <hour>12</hour>
+      <intervalMinutes>60</intervalMinutes>
+      <intervalSeconds>0</intervalSeconds>
+      <minutes>0</minutes>
+      <repeat>N</repeat>
+      <schedulerType>0</schedulerType>
+      <weekDay>1</weekDay>
+      <parallel>N</parallel>
+      <xloc>80</xloc>
+      <yloc>120</yloc>
+      <attributes_hac/>
+    </action>
+    <action>
+      <name>01_staging_validacion.hpl</name>
+      <description>Ejecuta el Pipeline 1. Lee los CSV originales, aplica limpieza básica y genera staging y errores.</description>
+      <type>PIPELINE</type>
+      <attributes/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <clear_files>Y</clear_files>
+      <clear_rows>Y</clear_rows>
+      <create_parent_folder>N</create_parent_folder>
+      <exec_per_row>Y</exec_per_row>
+      <filename>/Users/montse/Desktop/Proyecto 2 - BI/etl/pipelines/01_staging_validacion.hpl</filename>
+      <logext/>
+      <logfile/>
+      <loglevel>Basic</loglevel>
+      <parameters>
+        <pass_all_parameters>N</pass_all_parameters>
+      </parameters>
+      <params_from_previous>N</params_from_previous>
+      <run_configuration>local</run_configuration>
+      <set_append_logfile>N</set_append_logfile>
+      <set_logfile>N</set_logfile>
+      <wait_until_finished>Y</wait_until_finished>
+      <parallel>N</parallel>
+      <xloc>432</xloc>
+      <yloc>112</yloc>
+      <attributes_hac/>
+    </action>
+    <action>
+      <name>02_modelo_dimensional.hpl</name>
+      <description>Ejecuta el Pipeline 2. Construye la estructura del modelo dimensional final y deja controles en la carpeta de errores.</description>
+      <type>PIPELINE</type>
+      <attributes/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <clear_files>Y</clear_files>
+      <clear_rows>Y</clear_rows>
+      <create_parent_folder>N</create_parent_folder>
+      <exec_per_row>Y</exec_per_row>
+      <filename>/Users/montse/Desktop/Proyecto 2 - BI/etl/pipelines/02_modelo_dimensional.hpl</filename>
+      <logext/>
+      <logfile/>
+      <loglevel>Basic</loglevel>
+      <parameters>
+        <pass_all_parameters>N</pass_all_parameters>
+      </parameters>
+      <params_from_previous>N</params_from_previous>
+      <run_configuration>local</run_configuration>
+      <set_append_logfile>N</set_append_logfile>
+      <set_logfile>N</set_logfile>
+      <wait_until_finished>Y</wait_until_finished>
+      <parallel>N</parallel>
+      <xloc>576</xloc>
+      <yloc>368</yloc>
+      <attributes_hac/>
+    </action>
+    <action>
+      <name>FIN</name>
+      <description>Fin correcto del workflow</description>
+      <type>SUCCESS</type>
+      <attributes/>
+      <parallel>N</parallel>
+      <xloc>840</xloc>
+      <yloc>120</yloc>
+      <attributes_hac/>
+    </action>
+  </actions>
+  <hops>
+    <hop>
+      <from>START</from>
+      <to>01_staging_validacion.hpl</to>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>Y</unconditional>
+    </hop>
+    <hop>
+      <from>01_staging_validacion.hpl</from>
+      <to>02_modelo_dimensional.hpl</to>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+    </hop>
+    <hop>
+      <from>02_modelo_dimensional.hpl</from>
+      <to>FIN</to>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+    </hop>
+  </hops>
+  <notepads>
+  </notepads>
+  <attributes/>
+</workflow>
